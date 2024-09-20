@@ -26,9 +26,9 @@
 
         // <!-- 一些数值定义 -->
         var canvasGeoRect = {
-            left: 120.0,
+            left: 74.0,
             right: 135.0,
-            top: 30.0,
+            top: 54.0,
             bottom: 18.0
         }
 
@@ -47,11 +47,13 @@
                 width: 0,
                 height: 0
             },
+            alpha: 0.8,
             url: "apcp.png"
         }
         const wvMin = W_CONVERT_OPT[render_cfg.weather.type].min;
         const wvMax = W_CONVERT_OPT[render_cfg.weather.type].max;
         const wvScale = W_CONVERT_OPT[render_cfg.weather.type].scale;
+        const wvAlpha = render_cfg.alpha;
         // 设置颜色和数值  
         var weatherRenderColors = [];
         // 根据给定数值进行对应的GLSL转换
@@ -117,34 +119,26 @@
             gl.enableVertexAttribArray(texCoordAttributeLocation);
             gl.vertexAttribPointer(texCoordAttributeLocation, 2, gl.FLOAT, false, 0, 0);
 
-            const textureSizeLocation = gl.getUniformLocation(program, 'u_textureSize');
-            gl.uniform2f(textureSizeLocation, cfg.texture.width, cfg.texture.heigth);
+            // const textureSizeLocation = gl.getUniformLocation(program, 'u_textureSize');
+            // gl.uniform2f(textureSizeLocation, cfg.texture.width, cfg.texture.heigth);
 
             // 坐标偏移计算参数
             const offsetLocation = gl.getUniformLocation(program, 'coordOffset');
             gl.uniform2fv(offsetLocation, offCoords.flat());
-            // 获取属性和uniform位置  
-            //const positionLocation = gl.getAttribLocation(program, 'a_position');
-            // 设置最大值 
-            const wvMaxalueLocation = gl.getUniformLocation(program, 'wvMaxalue');
-            gl.uniform1f(wvMaxalueLocation, wvMax);
+    
 
-            // 设置最小值 
-            const wvMinalueLocation = gl.getUniformLocation(program, 'wvMinalue');
-            gl.uniform1f(wvMinalueLocation, wvMin);
-
-            // 设置数值  
-            const scaleLocation = gl.getUniformLocation(program, 'scaleValue');
-            gl.uniform1f(scaleLocation, wvScale);
+            // 设置透明度 
+            const alphaLocation = gl.getUniformLocation(program, 'wvAlpha');
+            gl.uniform1f(alphaLocation, wvAlpha);
 
 
-            const colorsLocation = gl.getUniformLocation(program, 'colors');
+            const colorsLocation = gl.getUniformLocation(program, 'wvColors');
 
             // 将颜色传递给着色器  
             gl.uniform4fv(colorsLocation, weatherRenderColors.flat());
 
             // 设置有效颜色数量
-            const colorCountLocation = gl.getUniformLocation(program, 'colorCount');
+            const colorCountLocation = gl.getUniformLocation(program, 'wvColorNum');
             gl.uniform1i(colorCountLocation, weatherRenderColors.length);
 
             // 设置纹理单元
