@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>气象数据渲染测试</title>
+    <style>
+        #cvs-weather {
+            background-color: aquamarine;
+            display: block;
+            width: 90%;
+            height: 90%;
+            ;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- 这个地方需要指定一个较大的宽高,使webgl渲染比较精细的结果 -->
+    <canvas id="cvs-weather" height="1080" width="1920"></canvas>
+    <script src="marco.js"></script>
+    <script src="shader.js"></script>
+    <script src="tools.js"></script>
+    <script>
+
+        // <!-- 一些数值定义 -->
+        var canvasGeoRect = {
+            left: 120.0,
+            right: 135.0,
+            top: 30.0,
+            bottom: 18.0
+        }
+
+        var imageGeoRect = {
+            left: 74.0,
+            right: 135.0,
+            top: 54.0,
+            bottom: 18.0
+        }
+        var render_cfg = {
+            weather: {
+                type: APCP,
+                provider: NOAA
+            },
+            texture: {
+                width: 0,
+                height: 0
+            },
+            url: "apcp.png"
+        }
+        const wvMin = W_CONVERT_OPT[render_cfg.weather.type].min;
+        const wvMax = W_CONVERT_OPT[render_cfg.weather.type].max;
+        const wvScale = W_CONVERT_OPT[render_cfg.weather.type].scale;
+        // 设置颜色和数值  
+        var weatherRenderColors = [];
+        // 根据给定数值进行对应的GLSL转换
+
+        var colorLables = W_DEFAULT_COLOR_LABLES;
+        for( var i = 0; i <  colorLables[render_cfg.weather.type].thresholds.length; ++i)
+        {
+            var glsl_color = ARGB_TO_GLSL_VEC4(colorLables[render_cfg.weather.type].colors[i]);
+            var glsl_threshold = (colorLables[render_cfg.weather.type].thresholds[i] - wvMin) * wvScale / 255.0;
+            weatherRenderColors[i] = [glsl_color[0], glsl_color[1],glsl_color[2], glsl_threshold];
+        }
+
+        /// 下面开始加载矩阵数据并且渲染
+        const cvs = document.getElementById('cvs-weather');
+        const gl = LoadGL(cvs);
+
+        // 不同机器支持的顶点数组长度不一样, 有些机器不能显示
+        ASSERT(weatherRenderColors.length <= gl.getParameter(gl.MAX_VERTEX_ATTRIBS), "该机器顶点数组长度最大支持：" + gl.getParameter(gl.MAX_VERTEX_ATTRIBS) + ", 当前顶点数组长度:" + weatherRenderColors.length)
+
+        // 渲染函数,结合具体业务处理
+        function RenderNormal(cfg) {
+            gl.clearColor(0.0, 0.0, 0.0, 1.0);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+
+            // 设置视口
+            gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+
+            // 使用程序
+            gl.useProgram(program);
+
+            // 设置顶点数据
+            const positions = [
+                -1, 1,   // 左上
+                1, 1,    // 右上
+                -1, -1,  // 左下
+                1, -1,    // 右下
+            ];
+
+            const texCoords = [
+                -1, -1,   // 左上
+                1, -1,    // 右上
+                -1, 1,  // 左下
+                1, 1    // 右下
+            ];
+
+            const offCoords = OffSetBetweenScreenAndGrid(canvasGeoRect, imageGeoRect);
+
+
+            const positionBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
+
+            // 设置顶点属性
+            const positionAttributeLocation = gl.getAttribLocation(program, 'a_position');
+            gl.enableVertexAttribArray(positionAttributeLocation);
+            gl.vertexAttribPointer(positionAttributeLocation, 2, gl.FLOAT, false, 0, 0);
+
+            const texCoordBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(texCoords), gl.STATIC_DRAW);
+
+            const texCoordAttributeLocation = gl.getAttribLocation(program, 'a_texCoord');
+            gl.enableVertexAttribArray(texCoordAttributeLocation);
+            gl.vertexAttribPointer(texCoordAttributeLocation, 2, gl.FLOAT, false, 0, 0);
+
+            const textureSizeLocation = gl.getUniformLocation(program, 'u_textureSize');
+            gl.uniform2f(textureSizeLocation, cfg.texture.width, cfg.texture.heigth);
+
+            // 坐标偏移计算参数
+            const offsetLocation = gl.getUniformLocation(program, 'coordOffset');
+            gl.uniform2fv(offsetLocation, offCoords.flat());
+            // 获取属性和uniform位置  
+            //const positionLocation = gl.getAttribLocation(program, 'a_position');
+            // 设置最大值 
+            const wvMaxalueLocation = gl.getUniformLocation(program, 'wvMaxalue');
+            gl.uniform1f(wvMaxalueLocation, wvMax);
+
+            // 设置最小值 
+            const wvMinalueLocation = gl.getUniformLocation(program, 'wvMinalue');
+            gl.uniform1f(wvMinalueLocation, wvMin);
+
+            // 设置数值  
+            const scaleLocation = gl.getUniformLocation(program, 'scaleValue');
+            gl.uniform1f(scaleLocation, wvScale);
+
+
+            const colorsLocation = gl.getUniformLocation(program, 'colors');
+
+            // 将颜色传递给着色器  
+            gl.uniform4fv(colorsLocation, weatherRenderColors.flat());
+
+            // 设置有效颜色数量
+            const colorCountLocation = gl.getUniformLocation(program, 'colorCount');
+            gl.uniform1i(colorCountLocation, weatherRenderColors.length);
+
+            // 设置纹理单元
+            const textureLocation = gl.getUniformLocation(program, 'u_image');
+            gl.uniform1i(textureLocation, 0);
+
+            // 绘制
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+        }
+
+        // 渲染流场
+        function RenderWindFloow(cfg)
+        {
+            // TODO: 
+        }
+        // 初始化
+        const vertexShader = CreateShader(gl, gl.VERTEX_SHADER, VERTES_SHADER_SOURCE);
+        const fragmentShader = CreateShader(gl, gl.FRAGMENT_SHADER, FRAGMENT_SHADER_SOURCE);
+        const program = CreateProgram(gl, vertexShader, fragmentShader);
+
+        LoadTexture(gl, render_cfg.url, RenderNormal, render_cfg);
+    </script>
+</body>
+
+</html>
