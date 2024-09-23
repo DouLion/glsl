@@ -5,13 +5,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>气象数据渲染测试</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 通过修改canvas的透明度 -->
     <style>
         #cvs-weather {
+
             background-color: 'rgba(0,0,0,0)';
             display: block;
             width: 90%;
             height: 90%;
             ;
+        }
+
+        .slider {
+            width: 90%;
+            height: 15px;
+            background: #ddd;
+            border-radius: 5px;
+            outline: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 0px;
+            height: 25px;
+            background: #4CAF50;
+            border-radius: 50%;
+            cursor: pointer;
         }
     </style>
 </head>
@@ -19,6 +40,10 @@
 <body>
     <!-- 这个地方需要指定一个较大的宽高,使webgl渲染比较精细的结果 -->
     <canvas id="cvs-weather" height="1080" width="1920"></canvas>
+    <div class="flex flex-col items-center">
+        <input type="range" min="0" max="100" value="50" class="slider" id="mySlider">
+        <p class="mt-4 text-lg" id="sliderValue">50</p>
+    </div>
     <script src="marco.js"></script>
     <script src="shader.js"></script>
     <script src="tools.js"></script>
@@ -61,8 +86,7 @@
         // 根据给定数值进行对应的GLSL转换
 
         var colorLables = W_DEFAULT_COLOR_LABLES;
-        for( var i = 0; i <  colorLables[render_cfg.weather.type].thresholds.length; ++i)
-        {
+        for (var i = 0; i < colorLables[render_cfg.weather.type].thresholds.length; ++i) {
             var glsl_color = ARGB_TO_GLSL_VEC4(colorLables[render_cfg.weather.type].colors[i]);
             var glsl_threshold = (colorLables[render_cfg.weather.type].thresholds[i] - wvMin) * wvScale / 255.0;
             wRenderColors[i] = glsl_color;
@@ -70,22 +94,30 @@
         }
 
         /// 下面开始加载矩阵数据并且渲染
-        const cvs = document.getElementById('cvs-weather');
-        const gl = LoadGL(cvs);
+        const cvsWeather = document.getElementById('cvs-weather');
+        // const ctxWeatner = cvsWeather.getContext('2d');
+        const slider = document.getElementById("mySlider");  
+        const output = document.getElementById("sliderValue");  
+     
+
+        const glWeather = LoadGL(cvsWeather);
 
         // 不同机器支持的顶点数组长度不一样, 有些机器不能显示
-        ASSERT(wRenderColors.length <= gl.getParameter(gl.MAX_VERTEX_ATTRIBS), "该机器顶点数组长度最大支持：" + gl.getParameter(gl.MAX_VERTEX_ATTRIBS) + ", 当前顶点数组长度:" + wRenderColors.length)
+        ASSERT(wRenderColors.length <= glWeather.getParameter(glWeather.MAX_VERTEX_ATTRIBS), "该机器顶点数组长度最大支持：" + glWeather.getParameter(glWeather.MAX_VERTEX_ATTRIBS) + ", 当前顶点数组长度:" + wRenderColors.length)
 
         // 渲染函数,结合具体业务处理
         function RenderNormal(cfg) {
-            gl.clearColor(0.0, 0.0, 0.0, 1.0);
-            gl.clear(gl.COLOR_BUFFER_BIT);
+            let alpha = parseFloat(output.innerText)/100.0;
+            // ctxWeatner.globalAlpha = cfg.alpha;
+            //cvsWeather.innerHTML =`Opacity: ${alpha}%`;
+            glWeather.clearColor(0.0, 0.0, 0.0, 1.0);
+            glWeather.clear(glWeather.COLOR_BUFFER_BIT);
 
             // 设置视口
-            gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+            glWeather.viewport(0, 0, glWeather.canvas.width, glWeather.canvas.height);
 
             // 使用程序
-            gl.useProgram(program);
+            glWeather.useProgram(program);
 
             // 设置顶点数据
             const positions = [
@@ -105,62 +137,80 @@
             const offCoords = OffSetBetweenScreenAndGrid(canvasGeoRect, imageGeoRect);
 
 
-            const positionBuffer = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
+            const positionBuffer = glWeather.createBuffer();
+            glWeather.bindBuffer(glWeather.ARRAY_BUFFER, positionBuffer);
+            glWeather.bufferData(glWeather.ARRAY_BUFFER, new Float32Array(positions), glWeather.STATIC_DRAW);
 
             // 设置顶点属性
-            const positionAttributeLocation = gl.getAttribLocation(program, 'a_position');
-            gl.enableVertexAttribArray(positionAttributeLocation);
-            gl.vertexAttribPointer(positionAttributeLocation, 2, gl.FLOAT, false, 0, 0);
+            const glLocPosAttr = glWeather.getAttribLocation(program, 'a_position');
+            glWeather.enableVertexAttribArray(glLocPosAttr);
+            glWeather.vertexAttribPointer(glLocPosAttr, 2, glWeather.FLOAT, false, 0, 0);
 
-            const texCoordBuffer = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
-            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(texCoords), gl.STATIC_DRAW);
+            const texCoordBuffer = glWeather.createBuffer();
+            glWeather.bindBuffer(glWeather.ARRAY_BUFFER, texCoordBuffer);
+            glWeather.bufferData(glWeather.ARRAY_BUFFER, new Float32Array(texCoords), glWeather.STATIC_DRAW);
 
-            const texCoordAttributeLocation = gl.getAttribLocation(program, 'a_texCoord');
-            gl.enableVertexAttribArray(texCoordAttributeLocation);
-            gl.vertexAttribPointer(texCoordAttributeLocation, 2, gl.FLOAT, false, 0, 0);
+            const glLocTexCoordAttr = glWeather.getAttribLocation(program, 'a_texCoord');
+            glWeather.enableVertexAttribArray(glLocTexCoordAttr);
+            glWeather.vertexAttribPointer(glLocTexCoordAttr, 2, glWeather.FLOAT, false, 0, 0);
 
-            // const textureSizeLocation = gl.getUniformLocation(program, 'u_textureSize');
-            // gl.uniform2f(textureSizeLocation, cfg.texture.width, cfg.texture.heigth);
+            // const textureSizeLocation = glWeather.getUniformLocation(program, 'u_textureSize');
+            // glWeather.uniform2f(textureSizeLocation, cfg.texture.width, cfg.texture.heigth);
 
             // 坐标偏移计算参数
-            const glLocOffset = gl.getUniformLocation(program, 'coordOffset');
-            gl.uniform2fv(glLocOffset, offCoords.flat());
-    
+            const glLocOffset = glWeather.getUniformLocation(program, 'coordOffset');
+            glWeather.uniform2fv(glLocOffset, offCoords.flat());
+
 
             // 将颜色传递给着色器 
-            const glLocColors = gl.getUniformLocation(program, 'wvColors');
-            gl.uniform4fv(glLocColors, wRenderColors.flat());
+            const glLocColors = glWeather.getUniformLocation(program, 'wvColors');
+            glWeather.uniform4fv(glLocColors, wRenderColors.flat());
 
-             // 将颜色传递给着色器 
-             const glLocThresholds = gl.getUniformLocation(program, 'wvThresholds');
-            gl.uniform1fv(glLocThresholds, wRenderThresholds);
+            // 将颜色传递给着色器 
+            const glLocThresholds = glWeather.getUniformLocation(program, 'wvThresholds');
+            glWeather.uniform1fv(glLocThresholds, wRenderThresholds);
 
             // 设置有效颜色数量
-            const glLocColorNum = gl.getUniformLocation(program, 'wvColorNum');
-            gl.uniform1i(glLocColorNum, wRenderColors.length);
+            const glLocColorNum = glWeather.getUniformLocation(program, 'wvColorNum');
+            glWeather.uniform1i(glLocColorNum, wRenderColors.length);
 
             // 设置纹理单元
-            const textureLocation = gl.getUniformLocation(program, 'u_image');
-            gl.uniform1i(textureLocation, 0);
+            const glLocColorTexture = glWeather.getUniformLocation(program, 'u_image');
+            glWeather.uniform1i(glLocColorTexture, 0);
 
             // 绘制
-            gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+            glWeather.drawArrays(glWeather.TRIANGLE_STRIP, 0, 4);
         }
 
         // 渲染流场
-        function RenderWindFloow(cfg)
-        {
+        function RenderWindFloow(cfg) {
             // TODO: 
         }
         // 初始化
-        const vertexShader = CreateShader(gl, gl.VERTEX_SHADER, VERTES_SHADER_SOURCE);
-        const fragmentShader = CreateShader(gl, gl.FRAGMENT_SHADER, FRAGMENT_SHADER_SOURCE);
-        const program = CreateProgram(gl, vertexShader, fragmentShader);
+        const vertexShader = CreateShader(glWeather, glWeather.VERTEX_SHADER, VERTES_SHADER_SOURCE);
+        const fragmentShader = CreateShader(glWeather, glWeather.FRAGMENT_SHADER, FRAGMENT_SHADER_SOURCE);
+        const program = CreateProgram(glWeather, vertexShader, fragmentShader);
 
-        LoadTexture(gl, render_cfg.url, RenderNormal, render_cfg);
+        LoadTexture(glWeather, render_cfg.url, RenderNormal, render_cfg);
+
+
+        const ctxWeather = cvsWeather.getContext('2d');
+        function redraw() {
+            LoadTexture(glWeather, render_cfg.url, RenderNormal, render_cfg);
+        }
+        slider.oninput = function() {  
+            output.innerHTML = this.value;  
+             // 清除画布
+             redraw();
+        }  
+
+      
+
+        // 监听滑块变化
+        //slider.addEventListener('input', draw);
+
+        // 初始化绘制
+        //draw();
     </script>
 </body>
 
