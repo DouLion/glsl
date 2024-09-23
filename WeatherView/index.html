@@ -1,5 +1,4 @@
-<!DOCTYPE html>
-<html lang="zh">
+<html>
 
 <head>
     <meta charset="UTF-8">
@@ -146,39 +145,36 @@
             gl.useProgram(program);
 
             // 设置顶点数据
-            const positions = [
-                -1, 1,   // 左上
-                1, 1,    // 右上
-                -1, -1,  // 左下
-                1, -1,    // 右下
-            ];
-
-            const texCoords = [
-                -1, -1,   // 左上
-                1, -1,    // 右上
-                -1, 1,  // 左下
-                1, 1    // 右下
-            ];
+            var verticesTexCoords = new Float32Array([
+        //顶点坐标   纹理坐标
+        //------\\ //----\\
+        -1, 1, 0.0, 1.0, //顶点1
+        -1, -1, 0.0, 0.0, //顶点2
+        1, 1, 1.0, 1.0, //顶点3
+        1, -1, 1.0, 0.0, //顶点4
+      ]);
+      var FSIZE = verticesTexCoords.BYTES_PER_ELEMENT;
 
             const offCoords = OffSetBetweenScreenAndGrid(canvasGeoRect, imageGeoRect);
 
 
             const positionBuffer = gl.createBuffer();
             gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
+            gl.bufferData(gl.ARRAY_BUFFER, verticesTexCoords, gl.STATIC_DRAW);
 
             // 设置顶点属性
             const glLocPosAttr = gl.getAttribLocation(program, 'a_position');
+            gl.vertexAttribPointer(glLocPosAttr, 2, gl.FLOAT, false, FSIZE * 4, 0);
             gl.enableVertexAttribArray(glLocPosAttr);
-            gl.vertexAttribPointer(glLocPosAttr, 2, gl.FLOAT, false, 0, 0);
 
-            const texCoordBuffer = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
-            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(texCoords), gl.STATIC_DRAW);
+            // const texCoordBuffer = gl.createBuffer();
+            // gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
+            // gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(texCoords), gl.STATIC_DRAW);
 
             const glLocTexCoordAttr = gl.getAttribLocation(program, 'a_texCoord');
+            gl.vertexAttribPointer(glLocTexCoordAttr, 2, gl.FLOAT, false, FSIZE * 4, FSIZE * 2);
             gl.enableVertexAttribArray(glLocTexCoordAttr);
-            gl.vertexAttribPointer(glLocTexCoordAttr, 2, gl.FLOAT, false, 0, 0);
+            
 
             // const textureSizeLocation = gl.getUniformLocation(program, 'u_textureSize');
             // gl.uniform2f(textureSizeLocation, cfg.texture.width, cfg.texture.heigth);

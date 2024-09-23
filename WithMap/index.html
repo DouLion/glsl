@@ -1,0 +1,30 @@
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GeoJSON Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        #map {
+            height: 100vh;
+            width: 100%;
+        }
+        #cvs-weather {
+            border: 1px solid black; /* 可选：添加边框以便更 clearly see canvas */
+          
+        }
+    </style>
+</head>
+<body>
+    <div id="map">
+  <!-- 绘制目标越大,图像越清晰 -->
+  <canvas id="cvs-weather"></canvas>
+
+    </div>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="marco.js"></script>
+    <script src="shader.js"></script>
+    <script src="tools.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
