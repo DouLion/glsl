@@ -29,182 +29,145 @@
     precision mediump float;
 uniform sampler2D u_image;
 varying vec2 v_texCoord;
-uniform vec4 wvColor[15];// 颜色数组
+uniform vec4 wvColors[15];// 颜色数组
+uniform float wvThresholds[15];
 uniform int wvColorNum;// 颜色数量
-uniform float wvAlpha; // 透明度
 
 // 根据值对颜色进行线性插值
-vec3 linearInterpolateColor(float value){
+vec4 linearInterpolateColor(float value){
     
+    //return vec4(wvThresholds[4], wvThresholds[4], wvThresholds[4], 1.0);
     float t=0.;
-    return vec3(value * float(wvColorNum)/20.0);
-    return vec3(step(value*wvAlpha, 0.01));
-    vec3 color=vec3(value);
-    vec3 tmp1=vec3(0.);
-    vec3 tmp2=vec3(0.);
-    // TODO: 比较顺序倒过来
+    vec4 color=vec4(0.);
+    vec4 tmp1=vec4(0.);
+    vec4 tmp2=vec4(0.);
+   
     int index=0;
-    if(wvColorNum>0&&value>wvColor[0].a)
+    if(wvColorNum>0&&value>=wvThresholds[0])
     {index++;}
-    if(wvColorNum>1&&value>wvColor[1].a)
+    if(wvColorNum>1&&value>=wvThresholds[1])
     {index++;}
-    if(wvColorNum>2&&value>wvColor[2].a)
+    if(wvColorNum>2&&value>=wvThresholds[2])
     {index++;}
-    if(wvColorNum>3&&value>wvColor[3].a)
+    if(wvColorNum>3&&value>=wvThresholds[3])
     {index++;}
-    if(wvColorNum>4&&value>wvColor[4].a)
+    if(wvColorNum>4&&value>=wvThresholds[4])
     {index++;}
-    if(wvColorNum>5&&value>wvColor[5].a)
+    if(wvColorNum>5&&value>=wvThresholds[5])
     {index++;}
-    if(wvColorNum>6&&value>wvColor[6].a)
+    if(wvColorNum>6&&value>=wvThresholds[6])
     {index++;}
-    if(wvColorNum>7&&value>wvColor[7].a)
+    if(wvColorNum>7&&value>=wvThresholds[7])
     {index++;}
-    if(wvColorNum>8&&value>wvColor[8].a)
+    if(wvColorNum>8&&value>=wvThresholds[8])
     {index++;}
-    if(wvColorNum>9&&value>wvColor[9].a)
+    if(wvColorNum>9&&value>=wvThresholds[9])
     {index++;}
-    if(wvColorNum>10&&value>wvColor[10].a)
+    if(wvColorNum>10&&value>=wvThresholds[10])
     {index++;}
-    if(wvColorNum>11&&value>wvColor[11].a)
+    if(wvColorNum>11&&value>=wvThresholds[11])
     {index++;}
-    if(wvColorNum>12&&value>wvColor[12].a)
+    if(wvColorNum>12&&value>=wvThresholds[12])
     {index++;}
-    if(wvColorNum>13&&value>wvColor[13].a)
+    if(wvColorNum>13&&value>=wvThresholds[13])
     {index++;}
-    if(wvColorNum>14&&value>wvColor[14].a)
+    if(wvColorNum>14&&value>=wvThresholds[14])
     {index++;}
     
-    if(index==0)
-    {
-        return vec3(0.);
-    }
-    if(index==wvColorNum-1)
-    {
-        if(wvColorNum==2)
-        {return wvColor[1].rgb;}
-        if(wvColorNum==3)
-        {return wvColor[2].rgb;}
-        if(wvColorNum==4)
-        {return wvColor[3].rgb;}
-        if(wvColorNum==5)
-        {return wvColor[4].rgb;}
-        if(wvColorNum==6)
-        {return wvColor[5].rgb;}
-        if(wvColorNum==7)
-        {return wvColor[6].rgb;}
-        if(wvColorNum==8)
-        {return wvColor[7].rgb;}
-        if(wvColorNum==9)
-        {return wvColor[8].rgb;}
-        if(wvColorNum==10)
-        {return wvColor[9].rgb;}
-        if(wvColorNum==11)
-        {return wvColor[10].rgb;}
-        if(wvColorNum==12)
-        {return wvColor[11].rgb;}
-        if(wvColorNum==13)
-        {return wvColor[12].rgb;}
-        if(wvColorNum==14)
-        {return wvColor[13].rgb;}
-        if(wvColorNum==15)
-        {return wvColor[14].rgb;}
-    }
     
     if(index==1)
     {
-        return wvColor[0].rgb;
-        tmp1=wvColor[0].rgb;
-        tmp2=wvColor[1].rgb;
-        t=(value-wvColor[0].a)/(wvColor[1].a-wvColor[0].a);
+        tmp1=wvColors[0];
+        tmp2=wvColors[1];
+        t=(value-wvThresholds[0])/(wvThresholds[1]-wvThresholds[0]);
     }
     else if(index==2)
     {
-        tmp1=wvColor[1].rgb;
-        tmp2=wvColor[2].rgb;
-        t=(value-wvColor[1].a)/(wvColor[2].a-wvColor[1].a);
+        tmp1=wvColors[1];
+        tmp2=wvColors[2];
+        t=(value-wvThresholds[1])/(wvThresholds[2]-wvThresholds[1]);
     }
     else if(index==3)
     {
-        tmp1=wvColor[2].rgb;
-        tmp2=wvColor[3].rgb;
-        t=(value-wvColor[2].a)/(wvColor[3].a-wvColor[2].a);
+        tmp1=wvColors[2];
+        tmp2=wvColors[3];
+        t=(value-wvThresholds[2])/(wvThresholds[3]-wvThresholds[2]);
     }
     else if(index==4)
     {
-        tmp1=wvColor[3].rgb;
-        tmp2=wvColor[4].rgb;
-        t=(value-wvColor[3].a)/(wvColor[4].a-wvColor[3].a);
+        tmp1=wvColors[3];
+        tmp2=wvColors[4];
+        t=(value-wvThresholds[3])/(wvThresholds[4]-wvThresholds[3]);
     }
     else if(index==5)
     {
-        tmp1=wvColor[4].rgb;
-        tmp2=wvColor[5].rgb;
-        t=(value-wvColor[4].a)/(wvColor[5].a-wvColor[4].a);
+        tmp1=wvColors[4];
+        tmp2=wvColors[5];
+        t=(value-wvThresholds[4])/(wvThresholds[5]-wvThresholds[4]);
     }
     else if(index==6)
     {
-        tmp1=wvColor[5].rgb;
-        tmp2=wvColor[6].rgb;
-        t=(value-wvColor[5].a)/(wvColor[6].a-wvColor[5].a);
+        tmp1=wvColors[5];
+        tmp2=wvColors[6];
+        t=(value-wvThresholds[5])/(wvThresholds[6]-wvThresholds[5]);
     }
     else if(index==7)
     {
-        tmp1=wvColor[6].rgb;
-        tmp2=wvColor[7].rgb;
-        t=(value-wvColor[6].a)/(wvColor[7].a-wvColor[6].a);
+        tmp1=wvColors[6];
+        tmp2=wvColors[7];
+        t=(value-wvThresholds[6])/(wvThresholds[7]-wvThresholds[6]);
     }
     else if(index==8)
     {
-        tmp1=wvColor[7].rgb;
-        tmp2=wvColor[8].rgb;
-        t=(value-wvColor[7].a)/(wvColor[8].a-wvColor[7].a);
+        tmp1=wvColors[7];
+        tmp2=wvColors[8];
+        t=(value-wvThresholds[7])/(wvThresholds[8]-wvThresholds[7]);
     }
     else if(index==9)
     {
         
-        tmp1=wvColor[8].rgb;
-        tmp2=wvColor[9].rgb;
-        t=(value-wvColor[8].a)/(wvColor[9].a-wvColor[8].a);
+        tmp1=wvColors[8];
+        tmp2=wvColors[9];
+        t=(value-wvThresholds[8])/(wvThresholds[9]-wvThresholds[8]);
     }
     else if(index==10)
     {
-        tmp1=wvColor[9].rgb;
-        tmp2=wvColor[10].rgb;
-        t=(value-wvColor[9].a)/(wvColor[10].a-wvColor[9].a);
+        tmp1=wvColors[9];
+        tmp2=wvColors[10];
+        t=(value-wvThresholds[9])/(wvThresholds[10]-wvThresholds[9]);
     }
     else if(index==11)
     {
-        tmp1=wvColor[10].rgb;
-        tmp2=wvColor[11].rgb;
-        t=(value-wvColor[10].a)/(wvColor[11].a-wvColor[10].a);
+        tmp1=wvColors[10];
+        tmp2=wvColors[11];
+        t=(value-wvThresholds[10])/(wvThresholds[11]-wvThresholds[10]);
     }
     else if(index==12)
     {
-        tmp1=wvColor[11].rgb;
-        tmp2=wvColor[12].rgb;
-        t=(value-wvColor[11].a)/(wvColor[12].a-wvColor[11].a);
+        tmp1=wvColors[11];
+        tmp2=wvColors[12];
+        t=(value-wvThresholds[11])/(wvThresholds[12]-wvThresholds[11]);
     }
     else if(index==13)
     {
-        tmp1=wvColor[12].rgb;
-        tmp2=wvColor[13].rgb;
-        t=(value-wvColor[12].a)/(wvColor[13].a-wvColor[12].a);
+        tmp1=wvColors[12];
+        tmp2=wvColors[13];
+        t=(value-wvThresholds[12])/(wvThresholds[13]-wvThresholds[12]);
     }
     else if(index==14)
     {
-        tmp1=wvColor[13].rgb;
-        tmp2=wvColor[14].rgb;
-        t=(value-wvColor[13].a)/(wvColor[14].a-wvColor[13].a);
+        tmp1=wvColors[13];
+        tmp2=wvColors[14];
+        t=(value-wvThresholds[13])/(wvThresholds[14]-wvThresholds[13]);
     }
+        
     color=mix(tmp1,tmp2,t);
-    
     return color;
 }
 
 void main(){
     vec4 color=texture2D(u_image,v_texCoord);
-    color=vec4(linearInterpolateColor(color.r),.9);
+    color=linearInterpolateColor(color.r);
     gl_FragColor=color;
 }
      `;

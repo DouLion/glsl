@@ -159,20 +159,24 @@ const W_PROVIDER_LEGEND =
 const W_DEFAULT_COLOR_LABLES = {
     APCP: {
         "thresholds": [
+            0.0,
             1,
             10,
             25,
             50,
             100,
-            250
+            250,
+            999
         ],
         "colors": [
+            "00000000",
             "afa5f28f",
             "af3da700",
             "af61bbfd",
             "af0001fb",
             "affe00fe",
-            "af82033b"
+            "af82033b",
+            "afff033b"
         ]
     },
     RH: {
