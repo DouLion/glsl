@@ -1,5 +1,5 @@
  // 顶点着色器
- const VERTES_SHADER_SOURCE = `
+ const WEATHER_VERTES_SHADER_SOURCE = `
     attribute vec2 a_position;
     varying vec2 v_texCoord;
     uniform vec2 coordOffset[2];
@@ -25,7 +25,7 @@
  `;
 
  // 片段着色器
- const FRAGMENT_SHADER_SOURCE = `
+ const WEATHER_FRAGMENT_SHADER_SOURCE = `
     precision mediump float;
 uniform sampler2D u_image;
 varying vec2 v_texCoord;
@@ -171,3 +171,112 @@ void main(){
     gl_FragColor=color;
 }
      `;
+
+
+
+const LABEL_VERTES_SHADER_SOURCE = `
+ attribute vec4 aVertexPosition;
+                void main(void) {
+                    gl_Position = aVertexPosition;
+                }
+`;
+
+const LABEL_FRAGMENT_SHADER_SOURCE = `
+ precision mediump float;
+
+uniform vec2 u_resolution;
+uniform vec4 wvColors[15];// 颜色数组
+uniform float wvThresholds[15];
+uniform int wvColorNum;// 颜色数量
+
+vec4 getColor(float value) {
+    vec4 tmp1=vec4(0.);
+    vec4 tmp2=vec4(0.);
+    vec4 color = vec4(0.);
+    float fidx = value * float(wvColorNum - 1);
+    int index = int(ceil(fidx));
+    float t = fract(fidx);
+     if(index==1)
+    {
+        tmp1=wvColors[0];
+        tmp2=wvColors[1];
+    }
+    else if(index==2)
+    {
+        tmp1=wvColors[1];
+        tmp2=wvColors[2];
+    }
+    else if(index==3)
+    {
+        tmp1=wvColors[2];
+        tmp2=wvColors[3];
+    }
+    else if(index==4)
+    {
+        tmp1=wvColors[3];
+        tmp2=wvColors[4];
+    }
+    else if(index==5)
+    {
+        tmp1=wvColors[4];
+        tmp2=wvColors[5];
+    }
+    else if(index==6)
+    {
+        tmp1=wvColors[5];
+        tmp2=wvColors[6];
+    }
+    else if(index==7)
+    {
+        tmp1=wvColors[6];
+        tmp2=wvColors[7];
+    }
+    else if(index==8)
+    {
+        tmp1=wvColors[7];
+        tmp2=wvColors[8];
+    }
+    else if(index==9)
+    {
+        
+        tmp1=wvColors[8];
+        tmp2=wvColors[9];
+    }
+    else if(index==10)
+    {
+        tmp1=wvColors[9];
+        tmp2=wvColors[10];
+    }
+    else if(index==11)
+    {
+        tmp1=wvColors[10];
+        tmp2=wvColors[11];
+    }
+    else if(index==12)
+    {
+        tmp1=wvColors[11];
+        tmp2=wvColors[12];
+    }
+    else if(index==13)
+    {
+        tmp1=wvColors[12];
+        tmp2=wvColors[13];
+    }
+    else if(index==14)
+    {
+        tmp1=wvColors[13];
+        tmp2=wvColors[14];
+    }
+        
+    color=mix(tmp1,tmp2,t);
+    return color;
+} 
+void main() {
+    vec2 st = gl_FragCoord.xy/u_resolution;
+
+
+    vec4 color = getColor(st.y);
+
+    gl_FragColor = color;
+}
+`;
