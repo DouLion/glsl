@@ -6,21 +6,68 @@
     const float SU_PI = 3.14159265358979323846;
     const float WGS84_SEMI_MAJOR_AXIS = 6378137.0;
 
-    void mercatorToLonLat(float mctx, float mcty, out float lon, out float lat) {
-        // 将 mctx 转换为经度
-        lon = (mctx / WGS84_SEMI_MAJOR_AXIS) * 180.0 / SU_PI;
+    float GeoLeft = 74.0;
+    float GeoTop = 54.0;
+    float GeoRight = 135.0;
+    float GeoBottom = 18.0;
+    float MctLeft = 0.0;
+    float MctTop = 0.0;
+    float MctRight = 0.0;
+    float MctBottom = 0.0;
 
-        // 将 mcty 转换为纬度
-        lat = (2.0 * atan(exp(mcty / WGS84_SEMI_MAJOR_AXIS)) - SU_PI / 2.0) * 180.0 / SU_PI;
+    void mercatorToLonLat(float mctx, float mcty, out float lon, out float lat) {
+        float lonRad = mctx/WGS84_SEMI_MAJOR_AXIS;
+        float latRad = 2.0 * atan(exp(mcty / WGS84_SEMI_MAJOR_AXIS)) - SU_PI / 2.0;
+        lon = lonRad* 180.0 / SU_PI;
+        lat = latRad* 180.0 / SU_PI;
+    }
+
+    void lonlatToMercator(float lon, float lat, out float mctx, out float mcty)
+    {
+        float latRad = lat * SU_PI / 180.0;
+        float lonRad = lon * SU_PI / 180.0;
+        mctx = WGS84_SEMI_MAJOR_AXIS * lonRad;
+        mcty = WGS84_SEMI_MAJOR_AXIS * log(tan(SU_PI / 4.0 + latRad / 2.0));
+    }
+
+    // 同坐标系转换
+    vec2 normal_cvt(vec2 p)
+    {
+
+        // + 视口大于图像范围  - 视口小于图像范围
+        p.y = coordOffset[1].y + (coordOffset[0].y - coordOffset[1].y) * p.y;
+        p.x = coordOffset[0].x + (coordOffset[1].x - coordOffset[0].x) * p.x;
+        p.y = 1.0 - p.y;
+        return p;
+    }
+
+    // 视口墨卡托, 网格点数据是经纬度
+    vec2 mercator_cvt(vec2 p)
+    {
+     
+        return vec2(0);
     }
     void main() {
         gl_Position = vec4(a_position, 0.0, 1.0);
         v_texCoord = a_position * 0.5 + 0.5; // 将顶点坐标转换为纹理坐标
-        // + 视口大于图像范围  - 视口小于图像范围
-        v_texCoord.y = coordOffset[1].y + (coordOffset[0].y - coordOffset[1].y) * v_texCoord.y;
-        v_texCoord.x = coordOffset[0].x + (coordOffset[1].x - coordOffset[0].x) * v_texCoord.x;
-        v_texCoord.y = 1.0 - v_texCoord.y;
-        
+
+        if(false)
+        {
+            lonlatToMercator(GeoLeft, GeoTop, MctLeft, MctTop);
+            lonlatToMercator(GeoRight, GeoBottom, MctRight, MctBottom);
+
+            float tmpMX = MctLeft + (MctRight - MctLeft) * v_texCoord.x;
+            float tmpMY = MctBottom + (MctTop - MctBottom) * v_texCoord.y;
+
+            float lon, lat;
+            mercatorToLonLat(tmpMX, tmpMY, lon, lat);
+            v_texCoord.x = (lon - GeoLeft)/(GeoRight - GeoLeft);
+            v_texCoord.y = (GeoTop - lat)/(GeoTop - GeoBottom);
+        }
+        else
+        {
+            v_texCoord = normal_cvt(v_texCoord);
+        }        
     }
  `;
 
@@ -161,7 +208,9 @@ vec4 linearInterpolateColor(float value){
         t=(value-wvThresholds[13])/(wvThresholds[14]-wvThresholds[13]);
     }
         
-    color=mix(tmp1,tmp2,t);
+    // color=mix(tmp1,tmp2,t);
+    float f1 = 1.0 -step(t, 0.9);
+    color = vec4(0., 0., f1, f1);
     return color;
 }
 
