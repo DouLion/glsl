@@ -58,10 +58,6 @@
         <canvas id="cvs-weather" width="1920" height="1080"></canvas>
        
      </div>
-     <div class="flex flex-col items-center" >
-        <input type="range" min="0" max="100" value="50" class="slider" id="mySlider">
-        <p class="mt-4 text-lg" id="sliderValue">50</p>
-    </div>
     
     <script src="marco.js"></script>
     <script src="shader.js"></script>
@@ -69,31 +65,30 @@
     <script>
 
         // <!-- 一些数值定义 -->
+        // 绘制目标区域的canvas经纬度范围
+        // 这个值取视口经纬度范围和 图像矩阵范围的相交部分
         var canvasGeoRect = {
             left: 74.0,
             right: 135.0,
             top: 54.0,
             bottom: 18.0
         }
-
+        // 图像矩阵范围, NOAA,ECMWF, HENANQX都不一样
         var imageGeoRect = {
             left: 74.0,
             right: 135.0,
             top: 54.0,
             bottom: 18.0
         }
+        // 渲染用的参数
         var render_cfg = {
             weather: {
-                type: APCP,
+                type: TMP,
                 provider: NOAA
             },
-            texture: {
-                width: 0,
-                height: 0
-            },
-            alpha: 0.8,
-            url: "apcp.png"
+            url: "tmp.png"
         }
+        // 取对应类型的数据转换参数
         const wvMin = W_CONVERT_OPT[render_cfg.weather.type].min;
         const wvMax = W_CONVERT_OPT[render_cfg.weather.type].max;
         const wvScale = W_CONVERT_OPT[render_cfg.weather.type].scale;
@@ -104,6 +99,7 @@
         var wRenderThresholds = [];
         // 根据给定数值进行对应的GLSL转换
 
+        // 渲染颜色取默认设置,也可以自行定义
         var colorLables = W_DEFAULT_COLOR_LABLES;
         for (var i = 0; i < colorLables[render_cfg.weather.type].thresholds.length; ++i) {
             var glsl_color = ARGB_TO_GLSL_VEC4(colorLables[render_cfg.weather.type].colors[i]);
@@ -116,9 +112,7 @@
         const cvsWeather = document.getElementById('cvs-weather');
         const cvsLable = document.getElementById('cvs-label');
         // const ctxWeatner = cvsWeather.getContext('2d');
-        const slider = document.getElementById("mySlider");  
-        const output = document.getElementById("sliderValue");  
-     
+          
            
         const glWeather = LoadGL(cvsWeather);
          // 不同机器支持的顶点数组长度不一样, 有些机器不能显示
@@ -128,7 +122,7 @@
 
         // 渲染函数,结合具体业务处理
         function RenderNormal(gl, cfg) {
-            let alpha = parseFloat(output.innerText)/100.0;
+            // let alpha = parseFloat(output.innerText)/100.0;
             // ctxWeatner.globalAlpha = cfg.alpha;
             //cvsWeather.innerHTML =`Opacity: ${alpha}%`;
          
@@ -273,15 +267,15 @@
         LoadTexture(glWeather, render_cfg.url, RenderNormal, render_cfg);
         RenderLable(glLable);
 
-        const ctxWeather = cvsWeather.getContext('2d');
-        function redraw() {
-            LoadTexture(glWeather, render_cfg.url, RenderNormal, render_cfg);
-        }
-        slider.oninput = function() {  
-            output.innerHTML = this.value;  
-             // 清除画布
-             redraw();
-        }  
+        // const ctxWeather = cvsWeather.getContext('2d');
+        // function redraw() {
+        //     LoadTexture(glWeather, render_cfg.url, RenderNormal, render_cfg);
+        // }
+        // slider.oninput = function() {  
+        //     output.innerHTML = this.value;  
+        //      // 清除画布
+        //      redraw();
+        // }  
 
       
 

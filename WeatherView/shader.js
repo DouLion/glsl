@@ -208,9 +208,9 @@ vec4 linearInterpolateColor(float value){
         t=(value-wvThresholds[13])/(wvThresholds[14]-wvThresholds[13]);
     }
         
-    // color=mix(tmp1,tmp2,t);
-    float f1 = 1.0 -step(t, 0.9);
-    color = vec4(0., 0., f1, f1);
+    color=mix(tmp1,tmp2,t);
+    // float f1 = 1.0 -step(t, 0.9);
+    // color = vec4(0., 0., f1, f1);
     return color;
 }
 
