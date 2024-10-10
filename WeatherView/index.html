@@ -72,7 +72,7 @@
                 provider: NOAA
             },
             
-            url: "tmp.png"
+            url: "img/tmp.png"
         }
        
         // 取对应类型的数据转换参数
@@ -283,7 +283,7 @@
             // 添加事件监听器  
             input.addEventListener('change', function() {  
                 render_cfg.weather.type = this.value; // 更新全局变量  
-                render_cfg.url = this.value + ".png";
+                render_cfg.url = "img/"+this.value + ".png";
                 ResetOptions();
                 LoadTexture(glWeather, render_cfg.url, RenderNormal, render_cfg);
             RenderLable(glLable);
