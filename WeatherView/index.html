@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>气象数据渲染测试</title>
     <!-- 通过修改canvas的透明度 -->
+    <script src="marco.js"></script>
+    <script src="shader.js"></script>
+    <script src="tools.js"></script>
     <style>
         .container {  
             border: 3px solid black; /* 可选：添加边框以便更清楚地看到 canvas */
@@ -33,6 +36,9 @@
 
 <body>
     <!-- 这个地方需要指定一个较大的宽高,使webgl渲染比较精细的结果 -->
+    <div class="select">
+        <div class="radio-group" id="radioGroup"></div>  
+    </div>
      <div class="container"> 
         <!-- 绘制目标越大,图像越清晰 -->
         <canvas id="cvs-label"  style="float: left;"><p>图例</p></canvas>
@@ -40,9 +46,6 @@
 
      </div>
     
-    <script src="marco.js"></script>
-    <script src="shader.js"></script>
-    <script src="tools.js"></script>
     <script>
 
         // <!-- 一些数值定义 -->
@@ -61,18 +64,21 @@
             top: 54.0,
             bottom: 18.0
         }
-        // 渲染用的参数
+
+    // 渲染用的参数
         var render_cfg = {
             weather: {
                 type: TMP,
                 provider: NOAA
             },
+            
             url: "tmp.png"
         }
+       
         // 取对应类型的数据转换参数
-        const wvMin = W_CONVERT_OPT[render_cfg.weather.type].min;
-        const wvMax = W_CONVERT_OPT[render_cfg.weather.type].max;
-        const wvScale = W_CONVERT_OPT[render_cfg.weather.type].scale;
+        var wvMin = W_CONVERT_OPT[render_cfg.weather.type].min;
+        var wvMax = W_CONVERT_OPT[render_cfg.weather.type].max;
+        var wvScale = W_CONVERT_OPT[render_cfg.weather.type].scale;
 
 
         // 设置颜色和数值  
@@ -84,7 +90,7 @@
         var colorLables = W_DEFAULT_COLOR_LABLES;
         for (var i = 0; i < colorLables[render_cfg.weather.type].thresholds.length; ++i) {
             var glsl_color = ARGB_TO_GLSL_VEC4(colorLables[render_cfg.weather.type].colors[i]);
-            var glsl_threshold = (colorLables[render_cfg.weather.type].thresholds[i] - wvMin) * wvScale / 255.0;
+            var glsl_threshold =colorLables[render_cfg.weather.type].thresholds[i] - wvMin;// ( - wvMin) * wvScale / 255.0;
             wRenderColors[i] = glsl_color;
             wRenderThresholds[i] = glsl_threshold;
         }
@@ -243,10 +249,50 @@
             // Draw the circle  
             gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);  
         }
+
+        function ResetOptions() {
+            wvMin = W_CONVERT_OPT[render_cfg.weather.type].min;
+            wvMax = W_CONVERT_OPT[render_cfg.weather.type].max;
+            wvScale = W_CONVERT_OPT[render_cfg.weather.type].scale;
+            wRenderColors = []
+            wRenderThresholds = []
+            for (var i = 0; i < colorLables[render_cfg.weather.type].thresholds.length; ++i) {
+            var glsl_color = ARGB_TO_GLSL_VEC4(colorLables[render_cfg.weather.type].colors[i]);
+            var glsl_threshold =colorLables[render_cfg.weather.type].thresholds[i] - wvMin;// ( - wvMin) * wvScale / 255.0;
+            wRenderColors[i] = glsl_color;
+            wRenderThresholds[i] = glsl_threshold;
+        }
+        }
        
 
         LoadTexture(glWeather, render_cfg.url, RenderNormal, render_cfg);
         RenderLable(glLable);
+
+        // 获取 radioGroup div  
+        const radioGroup = document.getElementById('radioGroup');  
+
+        // 动态创建单选框  
+        W_TYPES.forEach((w_type, index) => {  
+            const label = document.createElement('label');  
+            label.className = 'radio-option';  
+
+            const input = document.createElement('input');  
+            input.type = 'radio';  
+            input.name = 'options';  
+            input.value = w_type; // 使用全局定义的变量作为 value  
+            // 添加事件监听器  
+            input.addEventListener('change', function() {  
+                render_cfg.weather.type = this.value; // 更新全局变量  
+                render_cfg.url = this.value + ".png";
+                ResetOptions();
+                LoadTexture(glWeather, render_cfg.url, RenderNormal, render_cfg);
+            RenderLable(glLable);
+            });  
+
+            label.appendChild(input);  
+            label.appendChild(document.createTextNode(w_type));  
+            radioGroup.appendChild(label);  
+        });  
 
         // const ctxWeather = cvsWeather.getContext('2d');
         // function redraw() {
