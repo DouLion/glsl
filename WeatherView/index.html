@@ -4,17 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>气象数据渲染测试</title>
-    <script src="https://cdn.tailwindcss.com"></script>
     <!-- 通过修改canvas的透明度 -->
     <style>
-        .container {
+        .container {  
             border: 3px solid black; /* 可选：添加边框以便更清楚地看到 canvas */
         display: flex;
         justify-content: center; /* 使内容水平居中 */
         align-items: flex-end; /* 使内容垂直顶部对齐 */
         width: 1920px;
         height: 1080px;
-    }
+        }  
         #cvs-weather {
             border: 1px solid black; /* 可选：添加边框以便更清楚地看到 canvas */
             background-color: #00000000;
@@ -29,34 +28,16 @@
             height: 100%;
         }
 
-        .slider {
-            width: 1920px;
-            height: 15px;
-            background: #ddd;
-            border-radius: 5px;
-            outline: none;
-        }
-
-        .slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 0px;
-            height: 25px;
-            background: #4CAF50;
-            border-radius: 50%;
-            cursor: pointer;
-        }
     </style>
 </head>
 
 <body>
     <!-- 这个地方需要指定一个较大的宽高,使webgl渲染比较精细的结果 -->
      <div class="container"> 
-        
-        <canvas id="cvs-label"><p>图例</p></canvas>
         <!-- 绘制目标越大,图像越清晰 -->
-        <canvas id="cvs-weather" width="1920" height="1080"></canvas>
-       
+        <canvas id="cvs-label"  style="float: left;"><p>图例</p></canvas>
+        <canvas id="cvs-weather" width="1920" height="1080" style="float: right;"></canvas>
+
      </div>
     
     <script src="marco.js"></script>

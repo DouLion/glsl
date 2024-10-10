@@ -50,6 +50,7 @@
     void main() {
         gl_Position = vec4(a_position, 0.0, 1.0);
         v_texCoord = a_position * 0.5 + 0.5; // 将顶点坐标转换为纹理坐标
+        
 
         if(false)
         {
@@ -74,16 +75,18 @@
  // 片段着色器
  const WEATHER_FRAGMENT_SHADER_SOURCE = `
     precision mediump float;
-uniform sampler2D u_image;
-varying vec2 v_texCoord;
-uniform vec4 wvColors[15];// 颜色数组
-uniform float wvThresholds[15];
-uniform int wvColorNum;// 颜色数量
-
+    uniform sampler2D u_image;
+    varying vec2 v_texCoord;
+    uniform vec4 wvColors[15];// 颜色数组
+    uniform float wvThresholds[15];
+    uniform int wvColorNum;// 颜色数量
+    float minv = 0.0;
+    float scale = 1.0;
 // 根据值对颜色进行线性插值
-vec4 linearInterpolateColor(float value){
+vec4 linearInterpolateColor(vec4 px){
     
     //return vec4(wvThresholds[4], wvThresholds[4], wvThresholds[4], 1.0);
+    float value = px.r;// px.r/scale *255.0 + minv  + px.g *2.55;
     float t=0.;
     vec4 color=vec4(0.);
     vec4 tmp1=vec4(0.);
@@ -124,9 +127,10 @@ vec4 linearInterpolateColor(float value){
     
     if(index==1)
     {
-        tmp1=wvColors[0];
-        tmp2=wvColors[1];
+        tmp1=wvColors[0];//vec4(wvColors[0].rgb, 0.0);
+        tmp2=wvColors[1];//vec4(wvColors[1].rgb, 1.0);
         t=(value-wvThresholds[0])/(wvThresholds[1]-wvThresholds[0]);
+        //t = value;
     }
     else if(index==2)
     {
@@ -207,16 +211,30 @@ vec4 linearInterpolateColor(float value){
         tmp2=wvColors[14];
         t=(value-wvThresholds[13])/(wvThresholds[14]-wvThresholds[13]);
     }
-        
+      
     color=mix(tmp1,tmp2,t);
+    
     // float f1 = 1.0 -step(t, 0.9);
     // color = vec4(0., 0., f1, f1);
+
+    //color = vec4(value,0.,0., step(value, 0.4));
+    if(index == 1)
+    {
+        color = vec4(color.rgb, t*t);
+    }
+    // else
+    // {
+    // color = tmp2;
+
+    // }
+     
     return color;
 }
 
 void main(){
     vec4 color=texture2D(u_image,v_texCoord);
-    color=linearInterpolateColor(color.r);
+    
+    color=linearInterpolateColor(color);
     gl_FragColor=color;
 }
      `;
@@ -318,6 +336,8 @@ vec4 getColor(float value) {
     }
         
     color=mix(tmp1,tmp2,t);
+    color=vec4(color.rgb, 1.);
+    color = tmp2;
     return color;
 } 
 void main() {

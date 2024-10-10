@@ -157,10 +157,10 @@ const W_PROVIDER_LEGEND =
 
 // 默认的阈值和颜色
 const W_DEFAULT_COLOR_LABLES = {
-    APCP: {
+    "APCP": {
         "thresholds": [
             0.0,
-            1,
+            3,
             10,
             25,
             50,
@@ -177,6 +177,27 @@ const W_DEFAULT_COLOR_LABLES = {
             "fffe00fe",
             "ff82033b",
             "ffff033b"
+        ]
+    },
+    "APCP2":
+    {
+        "thresholds": [
+            0.0,
+            3,
+            10,
+            25,
+            100,
+            300,
+            999
+        ],
+        "colors": [
+            "004352BF",
+            "ff4251BE",
+            "ff29B0E3",
+            "ff27DCA8",
+            "ffF09E28",
+            "ff8D1003",
+            "ff8A0B03"
         ]
     },
     RH: {
@@ -199,15 +220,15 @@ const W_DEFAULT_COLOR_LABLES = {
         "colors": ["ff1464d2", "ff2882f0", "ff50a5f5", "ff96d2fa", "ffb4f0fa", "ffcbf8fd", "ffffffff", "ffb4faaa", "ff78f573", "ff37d23c", "ff1eb41e", "ff0fa00f"]
     },
     TMP: {
-        "thresholds": [-12.0, -8.0, -4, 0, 4, 8, 12, 16, 20, 24, 28, 32, 35, 37, 40],
+        "thresholds": [-40.0, -8.0, -4, 0, 4, 8, 12, 16, 20, 24, 28, 32, 35, 37, 50],
         "colors": ["ff006699", "ff2f6ad2", "ff1c74cc", "ff8dccff", "ff9de0f5", "ffdefbff", "fff2ffe5", "ffccffcc", "ffc9ff98", "ffffffa0", "ffffe5ba", "ffffcc9c", "ffe39995", "ffff4200", "ffeb0000"]
     },
     TMAX: {
-        "thresholds": [-12.0, -8.0, -4, 0, 4, 8, 12, 16, 20, 24, 28, 32, 35, 37, 40],
+        "thresholds": [-40.0, -8.0, -4, 0, 4, 8, 12, 16, 20, 24, 28, 32, 35, 37, 50],
         "colors": ["ff006699", "ff2f6ad2", "ff1c74cc", "ff8dccff", "ff9de0f5", "ffdefbff", "fff2ffe5", "ffccffcc", "ffc9ff98", "ffffffa0", "ffffe5ba", "ffffcc9c", "ffe39995", "ffff4200", "ffeb0000"]
     },
     TMIN: {
-        "thresholds": [-12.0, -8.0, -4, 0, 4, 8, 12, 16, 20, 24, 28, 32, 35, 37, 40],
+        "thresholds": [-40.0, -8.0, -4, 0, 4, 8, 12, 16, 20, 24, 28, 32, 35, 37, 50],
         "colors": ["ff006699", "ff2f6ad2", "ff1c74cc", "ff8dccff", "ff9de0f5", "ffdefbff", "fff2ffe5", "ffccffcc", "ffc9ff98", "ffffffa0", "ffffe5ba", "ffffcc9c", "ffe39995", "ffff4200", "ffeb0000"]
     },
     ULWRF: {
