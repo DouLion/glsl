@@ -89,19 +89,19 @@ const W_CONVERT_OPT = {
     },
     PRES: {
         max: 1400.0,
-        min: 960.0,
+        min: 0.0,
         scale: 0.55,
         unit: "hPa"
     },
     DSWRF: {
         max: 1100.0,
-        min: 100,
+        min: 0,
         scale: 0.255,
         unit: "W/m²"
     },
     ULWRF: {
         max: 550.0,
-        min: 50,
+        min: 0,
         scale: 0.5,
         unit: "W/m²"
     }
@@ -216,8 +216,8 @@ const W_DEFAULT_COLOR_LABLES = {
         ]
     },
     PRES: {
-        "thresholds": [960, 980, 985, 990, 995, 1000, 1050, 1200, 1250, 1300, 1350, 1400],
-        "colors": ["ff1464d2", "ff2882f0", "ff50a5f5", "ff96d2fa", "ffb4f0fa", "ffcbf8fd", "ffffffff", "ffb4faaa", "ff78f573", "ff37d23c", "ff1eb41e", "ff0fa00f"]
+        "thresholds": [960, 980, 985, 990, 995, 1000, 1050, 1200, 1250, 1300, 1350],
+        "colors": ["ff1464d2", "ff2882f0", "ff50a5f5", "ff96d2fa", "ffb4f0fa", "ffcbf8fd", "ffb4faaa", "ff78f573", "ff37d23c", "ff1eb41e", "ff0fa00f"]
     },
     TMP: {
         "thresholds": [-12.0, -8.0, -4, 0, 4, 8, 12, 16, 20, 24, 28, 32, 35, 37, 50],
@@ -231,12 +231,12 @@ const W_DEFAULT_COLOR_LABLES = {
         "thresholds": [-12.0, -8.0, -4, 0, 4, 8, 12, 16, 20, 24, 28, 32, 35, 37, 50],
         "colors": ["ff006699", "ff2f6ad2", "ff1c74cc", "ff8dccff", "ff9de0f5", "ffdefbff", "fff2ffe5", "ffccffcc", "ffc9ff98", "ffffffa0", "ffffe5ba", "ffffcc9c", "ffe39995", "ffff4200", "ffeb0000"]
     },
-    ULWRF: {
+    DSWRF: {
         "thresholds": [50, 100, 150, 200, 250, 300, 350, 400, 450, 500, 550],
         "colors": ["ff1e50b3", "ff3a5bc7", "ff4c74d8", "ff62a7c6", "ff80d4e1", "ffa1e1f1", "ffffee93", "ffffdd55", "ffffcc67", "ffffbb78", "ffff6f31"]
     },
-    DSWRF: {
-        "thresholds": [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100],
-        "colors": ["ffe0f3f8", "ffabd9e9", "ff74add1", "ff4575b4", "ff313695", "fffee090", "fffdae61", "fff46d43", "ffd73027", "ffa50026", "ff800026"]
+    ULWRF: {
+        "thresholds": [50, 100, 150, 200, 250, 300, 350, 400, 450, 500, 550],
+        "colors": ["ff1e50b3", "ff3a5bc7", "ff4c74d8", "ff62a7c6", "ff80d4e1", "ffa1e1f1", "ffffee93", "ffffdd55", "ffffcc67", "ffffbb78", "ffff6f31"]
     }
 }

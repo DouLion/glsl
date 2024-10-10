@@ -166,6 +166,15 @@ vec4 linearInterpolateColor(vec4 px){
         tmp2=wvColors[14];
         t=(value-wvThresholds[13])/(wvThresholds[14]-wvThresholds[13]);
     }
+    // if(index == 1)
+    // {
+    //     return vec4(tmp1.rgb, step(1.0 - t, 0.01));
+    // }
+    // else
+    // {
+    //     return tmp2;
+    // }
+    
     // 混合颜色
     color=mix(tmp1,tmp2,t);
     return color;
