@@ -216,7 +216,7 @@ const W_DEFAULT_COLOR_LABLES = {
         ]
     },
     PRES: {
-        "thresholds": [960, 980, 985, 990, 995, 1000, 1050, 1200, 1250, 1300, 1350],
+        "thresholds": [500, 600, 700, 800, 900, 950, 1000, 1010, 1025, 1040, 1060],
         "colors": ["ff1464d2", "ff2882f0", "ff50a5f5", "ff96d2fa", "ffb4f0fa", "ffcbf8fd", "ffb4faaa", "ff78f573", "ff37d23c", "ff1eb41e", "ff0fa00f"]
     },
     TMP: {
