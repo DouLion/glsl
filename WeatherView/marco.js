@@ -160,7 +160,7 @@ const W_DEFAULT_COLOR_LABLES = {
     "APCP": {
         "thresholds": [
             0.0,
-            3,
+            1,
             10,
             25,
             50,
@@ -183,7 +183,7 @@ const W_DEFAULT_COLOR_LABLES = {
     {
         "thresholds": [
             0.0,
-            3,
+            1,
             10,
             25,
             100,
