@@ -25,6 +25,15 @@ const GEM = "GEM";          // 加拿大
 const MET = "MET";          // 挪威
 const JMA = "JMA";          // 日本气象厅
 
+const LABLE_FRAG_GLSL = "shaders/lable.frag.glsl";
+const LABLE_VERT_GLSL = "shaders/lable.vert.glsl";
+const WATER_FRAG_GLSL = "shaders/water.frag.glsl";
+const WATER_VERT_GLSL = "shaders/water.vert.glsl";
+const WEATHER_FRAG_GLSL = "shaders/weather.frag.glsl";
+const WEATHER_VERT_GLSL = "shaders/weather.vert.glsl";
+const WIND_FRAG_GLSL = "shaders/wind.frag.glsl";
+const WIND_VERT_GLSL = "shaders/wind.vert.glsl";
+
 const W_TYPES = [
     APCP,
     RH,

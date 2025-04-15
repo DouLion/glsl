@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <base target="_top">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Quick Start - Leaflet</title>
+
+    <link rel="stylesheet" href="leaflet/leaflet.css" crossorigin="" />
+    <script src="leaflet/leaflet.js" crossorigin=""></script>
+    <script src="marco.js" crossorigin=""></script>
+    <script src="shader.js" crossorigin=""></script>
+    <script src="tools.js" crossorigin=""></script>
+    <script src="render.js" crossorigin=""></script>
+    <script src="events.js" crossorigin=""></script>
+
+    <style>
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+        }
+
+        .leaflet-container {
+            height: 100%;
+            width: 100%;
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        /* 让 canvas 占据整个屏幕并覆盖在地图上 */
+        #weatherRenderCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            /* 确保 canvas 不会阻挡地图交互 */
+            z-index: 1000;
+            /* 确保 canvas 在地图之上 */
+            opacity: 0.5;
+            visibility: hidden;
+        }
+    </style>
+
+
+</head>
+
+<body>
+
+
+    <div id="controls">
+        <label for="latlon">纬经度:</label>
+        <input type="text" id="latlon" placeholder="输入纬经度" />
+        <label for="lonlat">经纬度:</label>
+        <input type="text" id="lonlat" placeholder="输入经纬度" />
+        <button id="locateButton">定位</button>
+
+        <button id="locateCNButton">定位到中国</button>
+    </div>
+    <div id="map"></div>
+    <canvas id="weatherRenderCanvas"></canvas>
+    <script>
+
+        const map = L.map('map').setView([34, 98], 6);
+
+        const tiles = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+            maxZoom: 18,
+        }).addTo(map);
+
+        LoadGeoJSON(map, "vector/china_province_1e-4.geojson")
+
+        const popup = L.popup();
+        BindMapEvents(map)
+        const RenderShader = true;
+        if (RenderShader) {
+            map.on('moveend', function () {
+                let param = CreateRenderParam(this, TMP, NOAA);
+                LoadTexture(glWeather, param.url, RenderNormal, param);
+            });
+            map.on('zoomend', function () {
+                let param = CreateRenderParam(this, TMP, NOAA);
+                LoadTexture(glWeather, param.url, RenderNormal, param);
+            });
+        }
+
+
+        /// 下面开始加载矩阵数据并且渲染
+        const cvsWeather = document.getElementById('weatherRenderCanvas');
+
+        const glWeather = LoadGL(cvsWeather);
+        // 不同机器支持的顶点数组长度不一样, 有些机器不能显示
+        // ASSERT(wRenderColors.length <= glWeather.getParameter(glWeather.MAX_VERTEX_ATTRIBS), "该机器顶点数组长度最大支持：" + glWeather.getParameter(glWeather.MAX_VERTEX_ATTRIBS) + ", 当前顶点数组长度:" + wRenderColors.length)
+
+
+        if (RenderShader) {
+            let param = CreateRenderParam(map, TMP, NOAA);
+            LoadTexture(glWeather, param.url, RenderNormal, param);
+        }
+
+        // RenderLable(glLable);
+
+
+        function CreateRenderParam(map, selectType, selectProvider) {
+            let param =
+            {
+                cvsBound: {
+                    left: map.getBounds()._northEast.lng,
+                    right: map.getBounds()._southWest.lng,
+                    top: map.getBounds()._northEast.lat,
+                    bottom: map.getBounds()._southWest.lat
+                },
+                // 图像矩阵范围, NOAA,ECMWF, HENANQX都不一样
+                gridBound: {
+                    left: 74.0,
+                    right: 135.0,
+                    top: 54.0,
+                    bottom: 18.0
+                },
+                // 渲染用的参数
+                weather: {
+                    type: selectType,
+                    provider: selectProvider
+                },
+                url: "img/tmp.png",
+                // 取对应类型的数据转换参数
+                wvMin: W_CONVERT_OPT[selectType].min,
+                wvMax: W_CONVERT_OPT[selectType].max,
+                wvScale: W_CONVERT_OPT[selectType].scale,
+                // 设置颜色和数值  
+                wRenderColors: [],
+                wRenderThresholds: [],
+            }
+
+            // 根据给定数值进行对应的GLSL转换
+
+            // 渲染颜色取默认设置,也可以自行定义
+            colorLables = W_DEFAULT_COLOR_LABLES;
+            for (i = 0; i < colorLables[selectType].thresholds.length; ++i) {
+                glsl_color = ARGB_TO_GLSL_VEC4(colorLables[selectType].colors[i]);
+                glsl_threshold = colorLables[selectType].thresholds[i] - param.wvMin;
+                param.wRenderColors[i] = glsl_color;
+                param.wRenderThresholds[i] = glsl_threshold;
+            }
+            console.log(param.cvsBound);
+            return param;
+        }
+
+        function LoadGeoJSON(map, url) {
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    L.geoJSON(data, {
+                        style: function (feature) {
+                            return {
+                                color: "#0000FF",
+                                weight: 2,
+                                fillColor: "#000000",
+                                fillOpacity: 0.0
+                            };
+                        },
+                        onEachFeature: function (feature, layer) {
+                            if (feature.properties && feature.properties.name) {
+                                layer.bindPopup(feature.properties.name);
+                            }
+                        }
+                    }).addTo(map);
+                })
+                .catch(error => console.error('Error loading GeoJSON:', error));
+        }
+        // function BindLocate(map, str)
+         
+        document.getElementById('latlon').addEventListener('click', function () {
+            document.getElementById('lonlat').value = ''; // 清空经纬度输入框
+        });
+        document.getElementById('lonlat').addEventListener('click', function () {
+            document.getElementById('latlon').value = ''; // 清空纬经度输入框
+        });
+        {
+            var marker;
+
+            // 定位按钮点击事件
+            document.getElementById('locateButton').addEventListener('click', function () {
+                // 获取输入的经纬度
+                var latlonContent = document.getElementById('latlon').value.trim();
+                var lonlatContent = document.getElementById('lonlat').value.trim();
+                // 按照逗号分割 
+                var latlon = latlonContent.split(',');
+                if(latlon.length == 2)
+                {
+                    latitude = parseFloat(latlon[0]);
+                    longitude = parseFloat(latlon[1]);
+                    
+                }
+                else{
+                    var lonlat = lonlatContent.split(',');
+                    if(lonlat.length == 2)
+                    {
+                        latitude = parseFloat(lonlat[1]);
+                        longitude = parseFloat(lonlat[0]);
+                    }
+                    else{
+                        alert("请输入有效的经纬度！");
+                        return;
+                    }
+                }
+              
+
+                // 检查输入是否有效
+                if (isNaN(latitude) || isNaN(longitude)) {
+                    alert("请输入有效的经纬度！");
+                    return;
+                }
+
+                // 移除之前的标记（如果存在）
+                if (marker) {
+                    map.removeLayer(marker);
+                }
+
+                // 设置地图中心点
+                map.setView([latitude, longitude], 14);
+
+                // 在地图上绘制一个圆点
+                marker = L.circleMarker([latitude, longitude], {
+                    radius: 6, // 圆点半径
+                    fillColor: "#ff7800", // 填充颜色
+                    color: "#000", // 边框颜色
+                    weight: 1, // 边框宽度
+                    opacity: 1, // 边框透明度
+                    fillOpacity: 0.8 // 填充透明度
+                }).addTo(map);
+
+                // 绑定弹出信息
+                marker.bindPopup(`${longitude},${latitude}`).openPopup();
+            });
+        }
+    </script>
+
+
+</body>
+
+</html>

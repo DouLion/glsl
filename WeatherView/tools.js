@@ -28,7 +28,8 @@ function ARGB_TO_GLSL_VEC4(hex)  //返回结果 RGBA
     ];
 }
 
-function OffSetBetweenScreenAndGrid(screen, grid) {
+// 以数据网格范围为归一化单位, 获取屏幕坐标在网格范围内的归一化坐标
+function ScreebRelatePosInGrid(screen, grid) {
     var off = {
         left: (screen.left - grid.left) / (grid.right - grid.left),
         bottom: (screen.bottom - grid.bottom) / (grid.top - grid.bottom),
@@ -36,6 +37,30 @@ function OffSetBetweenScreenAndGrid(screen, grid) {
         top: (screen.top - grid.bottom) / (grid.top - grid.bottom)
     }
     return [[off.left, off.top], [off.right, off.bottom]];
+}
+
+// 以屏幕范围为归一化单位, 获取网格坐标在屏幕范围内的归一化坐标
+function GridRelatePosInScreen(screen, grid) {
+    var off = {
+       left : (grid.left - screen.left) / (screen.right - screen.left),
+       bottom : (grid.bottom - screen.bottom) / (screen.top - screen.bottom),
+       right : (grid.right - screen.left) / (screen.right - screen.left),
+       top : (grid.top - screen.bottom) / (screen.top - screen.bottom)
+
+    }
+    return [[off.left, off.top], [off.right, off.bottom]];
+}
+async function LoadShaderFile(url) {
+    try {
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`加载 GLSL 文件失败: ${response.status}`);
+        }
+        return await response.text();
+    } catch (error) {
+        console.error(error);
+        return null;
+    }
 }
 
 ///

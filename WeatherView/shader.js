@@ -34,6 +34,8 @@
     uniform vec4 wvColors[15];// 颜色数组
     uniform float wvThresholds[15];
     uniform int wvColorNum;// 颜色数量
+    attribute vec2 a_position;
+        uniform vec2 coordOffset2[2];
 // 根据值对颜色进行线性插值
 float round(float x)
 {
@@ -70,14 +72,6 @@ vec4 linearInterpolateColor(vec4 px){
     if(wvColorNum>9&&value>=wvThresholds[9])
     {index++;}
     if(wvColorNum>10&&value>=wvThresholds[10])
-    {index++;}
-    if(wvColorNum>11&&value>=wvThresholds[11])
-    {index++;}
-    if(wvColorNum>12&&value>=wvThresholds[12])
-    {index++;}
-    if(wvColorNum>13&&value>=wvThresholds[13])
-    {index++;}
-    if(wvColorNum>14&&value>=wvThresholds[14])
     {index++;}
     
     // 扎到对应上下边界的两个颜色和插值权重
@@ -142,48 +136,22 @@ vec4 linearInterpolateColor(vec4 px){
         tmp2=wvColors[10];
         t=(value-wvThresholds[9])/(wvThresholds[10]-wvThresholds[9]);
     }
-    else if(index==11)
-    {
-        tmp1=wvColors[10];
-        tmp2=wvColors[11];
-        t=(value-wvThresholds[10])/(wvThresholds[11]-wvThresholds[10]);
-    }
-    else if(index==12)
-    {
-        tmp1=wvColors[11];
-        tmp2=wvColors[12];
-        t=(value-wvThresholds[11])/(wvThresholds[12]-wvThresholds[11]);
-    }
-    else if(index==13)
-    {
-        tmp1=wvColors[12];
-        tmp2=wvColors[13];
-        t=(value-wvThresholds[12])/(wvThresholds[13]-wvThresholds[12]);
-    }
-    else if(index==14)
-    {
-        tmp1=wvColors[13];
-        tmp2=wvColors[14];
-        t=(value-wvThresholds[13])/(wvThresholds[14]-wvThresholds[13]);
-    }
-    // if(index == 1)
-    // {
-    //     return vec4(tmp1.rgb, step(1.0 - t, 0.01));
-    // }
-    // else
-    // {
-    //     return tmp2;
-    // }
-    
-    // 混合颜色
     color=mix(tmp1,tmp2,t);
     return color;
 }
 
 void main(){
+vec2 pos=v_texCoord;
     vec4 color=texture2D(u_image,v_texCoord);
-    
-    color=linearInterpolateColor(color);
+    if(pos.x <coordOffset2[0].x || pos.x > coordOffset2[1].x || pos.y < coordOffset2[0].y || pos.y > coordOffset2[1].y)
+    {
+        color=vec4(0.0,0.0,0.0,0.0);
+    }
+    else
+    {
+        color=linearInterpolateColor(color);
+    }
+   
     gl_FragColor=color;
 }
      `;

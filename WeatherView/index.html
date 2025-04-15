@@ -8,6 +8,7 @@
     <script src="marco.js"></script>
     <script src="shader.js"></script>
     <script src="tools.js"></script>
+    
     <style>
         .container {  
             border: 3px solid black; /* 可选：添加边框以便更清楚地看到 canvas */
@@ -51,14 +52,20 @@
         // <!-- 一些数值定义 -->
         // 绘制目标区域的canvas经纬度范围
         // 这个值取视口经纬度范围和 图像矩阵范围的相交部分
-        var canvasGeoRect = {
+        // var canvasRange = {
+        //     left: 70,
+        //     right: 140,
+        //     top: 60,
+        //     bottom: 0
+        // }
+        var canvasRange = {
             left: 74.0,
             right: 135.0,
             top: 54.0,
             bottom: 18.0
         }
         // 图像矩阵范围, NOAA,ECMWF, HENANQX都不一样
-        var imageGeoRect = {
+        var gridRange = {
             left: 74.0,
             right: 135.0,
             top: 54.0,
@@ -136,7 +143,8 @@
       ]);
       var FSIZE = verticesTexCoords.BYTES_PER_ELEMENT;
 
-            const offCoords = OffSetBetweenScreenAndGrid(canvasGeoRect, imageGeoRect);
+            const screenOffCoords = ScreebRelatePosInGrid(canvasRange, gridRange);
+            const gridOffCoords = GridRelatePosInScreen(canvasRange, gridRange);
 
 
             const positionBuffer = gl.createBuffer();
@@ -160,11 +168,14 @@
             // const textureSizeLocation = gl.getUniformLocation(program, 'u_textureSize');
             // gl.uniform2f(textureSizeLocation, cfg.texture.width, cfg.texture.heigth);
 
-            // 坐标偏移计算参数
+            // 坐标偏移计算参数传给顶点着色器
+            
             const glLocOffset = gl.getUniformLocation(program, 'coordOffset');
-            gl.uniform2fv(glLocOffset, offCoords.flat());
+            gl.uniform2fv(glLocOffset, screenOffCoords.flat());
 
-
+            // 坐标偏移计算参数
+            const glLocOffset2 = gl.getUniformLocation(program, 'coordOffset2');
+            gl.uniform2fv(glLocOffset2, gridOffCoords.flat());
             // 将颜色传递给着色器 
             const glLocColors = gl.getUniformLocation(program, 'wvColors');
             gl.uniform4fv(glLocColors, wRenderColors.flat());
