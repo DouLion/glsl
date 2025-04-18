@@ -15,8 +15,6 @@
     <script src="tools.js" crossorigin=""></script>
     <script src="render.js" crossorigin=""></script>
     <script src="events.js" crossorigin=""></script>
-    <script src="styles.js" crossorigin=""></script>
-    <script src="resource.js" crossorigin=""></script>
 
     <style>
         html,
@@ -47,6 +45,8 @@
             visibility: hidden;
         }
     </style>
+
+
 </head>
 
 <body>
@@ -66,18 +66,16 @@
     <script>
 
         const map = L.map('map').setView([34, 98], 6);
-        let CURRENT_ZOOM = map.getZoom();
 
-        const tiles = L.tileLayer(ArcGISHub.SateFireImage, {
+        const tiles = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
             maxZoom: 18,
         }).addTo(map);
 
-        LeafletLoadGeoJSON(map, "vector/china_province_1e-4.geojson", VECTOR_STYLE.SHENG_LINE)
-        LeafletLoadGeoJSON(map, "vector/111.geojson",VECTOR_STYLE.RADAR_LINE)
+        LoadGeoJSON(map, "vector/china_province_1e-4.geojson")
 
         const popup = L.popup();
         BindMapEvents(map)
-        const RenderShader = false;
+        const RenderShader = true;
         if (RenderShader) {
             map.on('moveend', function () {
                 let param = CreateRenderParam(this, TMP, NOAA);
@@ -86,14 +84,6 @@
             map.on('zoomend', function () {
                 let param = CreateRenderParam(this, TMP, NOAA);
                 LoadTexture(glWeather, param.url, RenderNormal, param);
-            });
-        }
-        else {
-            map.on('moveend', function () {
-
-            });
-            map.on('zoomend', function () {
-                CURRENT_ZOOM = map.getZoom();
             });
         }
 
@@ -112,37 +102,7 @@
         }
 
         // RenderLable(glLable);
-        //const uur = 'http://192.168.0.141:8086/radar_henan/api/data/render?type=REF&btm=2024-06-20%2008%3A00&etm=2024-06-20%2008%3A55&project=HENANPRO&station=HENAN1';
-        //const uur = 'http://192.168.0.141:8086/radar_henan/api/data/render?type=REF&btm=2024-06-20%2008%3A00&etm=2024-06-20%2008%3A55&project=HENANPRO&station=';
-        const uur = 'http://192.168.0.141:8086/radar_henan/api/data/render?type=REF&btm=2024-06-20%2008%3A55&etm=2024-06-20%2008%3A55&project=HENANPRO&station=';
-        fetch(uur) // 替换为实际的 API URL
-    .then(response => response.json())
-    .then(data => {
-        if (data.status === 1) {
-            const { left, right, top, bottom, png } = data.data;
 
-            // 定义图片的边界范围
-            const bounds = [
-                [top, left],    // 左上角坐标
-                [bottom, right] // 右下角坐标
-            ];
-
-            // 创建 Base64 图片的 URL
-            imageUrl = `data:image/png;base64,${png}`;
-
-            // 将图片添加到地图上
-            //imageUrl= "img/test8.png";
-            L.imageOverlay(imageUrl, bounds).addTo(map);
-
-            // 可选：调整地图视图以适应图片范围
-            map.fitBounds(bounds);
-        } else {
-            console.error('Error fetching image:', data.message);
-        }
-    })
-    .catch(error => {
-        console.error('Failed to fetch data:', error);
-    });
 
         function CreateRenderParam(map, selectType, selectProvider) {
             let param =
@@ -189,9 +149,30 @@
             return param;
         }
 
-      
+        function LoadGeoJSON(map, url) {
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    L.geoJSON(data, {
+                        style: function (feature) {
+                            return {
+                                color: "#0000FF",
+                                weight: 2,
+                                fillColor: "#000000",
+                                fillOpacity: 0.0
+                            };
+                        },
+                        onEachFeature: function (feature, layer) {
+                            if (feature.properties && feature.properties.name) {
+                                layer.bindPopup(feature.properties.name);
+                            }
+                        }
+                    }).addTo(map);
+                })
+                .catch(error => console.error('Error loading GeoJSON:', error));
+        }
         // function BindLocate(map, str)
-
+         
         document.getElementById('latlon').addEventListener('click', function () {
             document.getElementById('lonlat').value = ''; // 清空经纬度输入框
         });
@@ -208,23 +189,25 @@
                 var lonlatContent = document.getElementById('lonlat').value.trim();
                 // 按照逗号分割 
                 var latlon = latlonContent.split(',');
-                if (latlon.length == 2) {
+                if(latlon.length == 2)
+                {
                     latitude = parseFloat(latlon[0]);
                     longitude = parseFloat(latlon[1]);
-
+                    
                 }
-                else {
+                else{
                     var lonlat = lonlatContent.split(',');
-                    if (lonlat.length == 2) {
+                    if(lonlat.length == 2)
+                    {
                         latitude = parseFloat(lonlat[1]);
                         longitude = parseFloat(lonlat[0]);
                     }
-                    else {
+                    else{
                         alert("请输入有效的经纬度！");
                         return;
                     }
                 }
-
+              
 
                 // 检查输入是否有效
                 if (isNaN(latitude) || isNaN(longitude)) {
@@ -238,10 +221,17 @@
                 }
 
                 // 设置地图中心点
-                map.setView([latitude, longitude], 8);
+                map.setView([latitude, longitude], 14);
 
                 // 在地图上绘制一个圆点
-                marker = L.circleMarker([latitude, longitude], VECTOR_STYLE.MARK_POINT).addTo(map);
+                marker = L.circleMarker([latitude, longitude], {
+                    radius: 6, // 圆点半径
+                    fillColor: "#ff7800", // 填充颜色
+                    color: "#000", // 边框颜色
+                    weight: 1, // 边框宽度
+                    opacity: 1, // 边框透明度
+                    fillOpacity: 0.8 // 填充透明度
+                }).addTo(map);
 
                 // 绑定弹出信息
                 marker.bindPopup(`${longitude},${latitude}`).openPopup();
