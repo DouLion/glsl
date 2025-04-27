@@ -130,23 +130,148 @@ function LoadTexture(gl, url, func, args) {
     };
     image.src = url;
 }
-// 计算几何中心点的辅助函数
+// 计算几何中心点（质心）的辅助函数
 function getCentroid(geometry) {
+    if (!geometry || !geometry.type) {
+        throw new Error("Invalid geometry input");
+    }
 
-    let coords;
-    if(geometry.type === 'MultiPolygon' || geometry.type === 'MutliLineString')
-    {
-        coords = geometry.coordinates[0][0];
+    let centroid;
+
+    switch (geometry.type) {
+        case "Point":
+            // 如果是单个点，直接返回其坐标
+            centroid = geometry.coordinates;
+            break;
+
+        case "LineString":
+            // 对于折线，按线段长度加权计算质心
+            centroid = getLineStringCentroid(geometry.coordinates);
+            break;
+
+        case "Polygon":
+            // 对于单个多边形，按面积加权计算质心
+            centroid = getPolygonCentroid(geometry.coordinates[0]); // 外环
+            break;
+
+        case "MultiPolygon":
+            // 对于多个多边形，按总面积加权计算质心
+            centroid = getMultiPolygonCentroid(geometry.coordinates);
+            break;
+
+        case "MultiLineString":
+            // 对于多个折线，按总长度加权计算质心
+            centroid = getMultiLineStringCentroid(geometry.coordinates);
+            break;
+
+        default:
+            throw new Error(`Unsupported geometry type: ${geometry.type}`);
     }
-    else{
-        coords = geometry.coordinates[0];
+
+    return centroid;
+}
+
+// 计算 LineString 的质心
+function getLineStringCentroid(coords) {
+    let totalLength = 0;
+    let cx = 0, cy = 0;
+
+    for (let i = 0; i < coords.length - 1; i++) {
+        const [x1, y1] = coords[i];
+        const [x2, y2] = coords[i + 1];
+
+        const segmentLength = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+        totalLength += segmentLength;
+
+        // 按线段中点加权
+        const midX = (x1 + x2) / 2;
+        const midY = (y1 + y2) / 2;
+        cx += midX * segmentLength;
+        cy += midY * segmentLength;
     }
-    let x = 0, y = 0, len = coords.length;
-    for (let i = 0; i < len; i++) {
-        x += coords[i][0];
-        y += coords[i][1];
+
+    return [cx / totalLength, cy / totalLength];
+}
+
+// 计算 Polygon 的质心
+function getPolygonCentroid(coords) {
+    let area = 0;
+    let cx = 0, cy = 0;
+
+    for (let i = 0; i < coords.length; i++) {
+        const [x1, y1] = coords[i];
+        const [x2, y2] = coords[(i + 1) % coords.length]; // 循环到第一个点
+
+        const crossProduct = x1 * y2 - x2 * y1;
+        area += crossProduct;
+        cx += (x1 + x2) * crossProduct;
+        cy += (y1 + y2) * crossProduct;
     }
-    return [y / len, x / len];
+
+    area *= 0.5;
+    cx /= 6 * area;
+    cy /= 6 * area;
+
+    return [cx, cy];
+}
+
+// 计算 MultiPolygon 的质心
+function getMultiPolygonCentroid(multiPolygonCoords) {
+    let totalArea = 0;
+    let cx = 0, cy = 0;
+
+    for (const polygonCoords of multiPolygonCoords) {
+        const [centroidX, centroidY] = getPolygonCentroid(polygonCoords[0]); // 外环
+        const area = calculatePolygonArea(polygonCoords[0]);
+        totalArea += area;
+        cx += centroidX * area;
+        cy += centroidY * area;
+    }
+
+    return [cx / totalArea, cy / totalArea];
+}
+
+// 计算 MultiLineString 的质心
+function getMultiLineStringCentroid(multiLineStringCoords) {
+    let totalLength = 0;
+    let cx = 0, cy = 0;
+
+    for (const lineStringCoords of multiLineStringCoords) {
+        const [centroidX, centroidY] = getLineStringCentroid(lineStringCoords);
+        const length = calculateLineStringLength(lineStringCoords);
+        totalLength += length;
+        cx += centroidX * length;
+        cy += centroidY * length;
+    }
+
+    return [cx / totalLength, cy / totalLength];
+}
+
+// 辅助函数：计算多边形的面积
+function calculatePolygonArea(coords) {
+    let area = 0;
+
+    for (let i = 0; i < coords.length; i++) {
+        const [x1, y1] = coords[i];
+        const [x2, y2] = coords[(i + 1) % coords.length];
+
+        area += x1 * y2 - x2 * y1;
+    }
+
+    return Math.abs(area) / 2;
+}
+
+// 辅助函数：计算折线的总长度
+function calculateLineStringLength(coords) {
+    let length = 0;
+
+    for (let i = 0; i < coords.length - 1; i++) {
+        const [x1, y1] = coords[i];
+        const [x2, y2] = coords[i + 1];
+        length += Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+    }
+
+    return length;
 }
 
 function LeafletLoadGeoJSON(map, url, _style) {
@@ -163,8 +288,8 @@ function LeafletLoadGeoJSON(map, url, _style) {
                                 className: 'province-label',
                                 html: `<div style="position: relative; 
                                         transform: translate(-50%, -50%);
-                                        font-size: 12px; 
-                                        color: #333;
+                                        font-size: 16px; 
+                                        color: #AAA;
                                         text-shadow: 1px 1px 2px white;">${feature.properties.NAME}</div>`,
                                 iconSize: [100, 20]
                             })

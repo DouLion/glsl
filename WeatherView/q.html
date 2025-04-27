@@ -1,0 +1,576 @@
+<!DOCTYPE html>  
+<html lang="en">  
+<head>  
+  <meta charset="UTF-8">  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">  
+  <title>Mapbox Custom Layer 动态多边形</title>  
+  <link href='js/mapbox-gl.css' rel='stylesheet' />
+  <script src='js/mapbox-gl.js'></script>
+  <style>  
+    body, html {  
+      margin: 0;  
+      padding: 0;  
+      height: 100%;  
+    }  
+    #map {  
+      width: 100%;  
+      height: 100%;  
+	  background-color: rgba(12,39,86,0.9);
+    }  
+	#info {  
+	      position: absolute;  
+	      background: rgba(255, 255, 255, 0.8);  
+	      padding: 10px;  
+	      font-size: 14px;  
+	      border-radius: 4px;  
+	      top: 10px;  
+	      left: 10px;  
+	      z-index: 1;  
+	    } 
+  </style>  
+</head>  
+<body>  
+<div id="info">鼠标位置：经度: -, 纬度: -</div>  
+  <div id="map"></div>  
+  <script>  
+  var mapServer = 'http://192.168.0.145:9090/shzh/map'
+  		var style = {
+  		    version: 8,
+  			sprite: mapServer + "/sprite/sprite",
+  		    sources: {
+  				'line_outsheng_s100w':{
+  					"type": "vector",
+  					"tiles": [
+  						mapServer+"/tile/line_outsheng_s100w/{z}/{x}/{y}.pbf",
+  					],
+  					"minzoom": 4,
+  					"maxzoom": 15
+  				},
+  				'poly_sheng_s5000':{
+  						"type": "vector",
+  						"tiles": [
+  							mapServer + "/tile/poly_sheng_s5000/{z}/{x}/{y}.pbf",
+  						],
+  						"minzoom": 4,
+  						"maxzoom": 15
+  				},
+  				'poly_shi_s5000':{
+  					"type": "vector",
+  					"tiles": [
+  						mapServer+"/tile/poly_shi_s5000/{z}/{x}/{y}.pbf",
+  					],
+  					"minzoom": 4,
+  					"maxzoom": 15
+  				}
+  			},
+  		    layers: [
+  				{
+  					"id": 'line_outsheng_s100w',
+  					"type": "line",
+  					"source": 'line_outsheng_s100w',
+  					"source-layer": 'line_outsheng_s100w',
+  					'layout': {
+  						'line-join': 'round',
+  						'line-cap': 'round',
+  					},
+  					'paint': {
+  						"line-color": '#426D8F',
+  						"line-width": 1.2
+  					}
+  				},
+  				{
+  					"id": 'poly_shi_s5000',
+  					"type": "fill",
+  					"source": 'poly_shi_s5000',
+  					"source-layer": 'poly_shi_s5000',
+  					'paint': {
+  						"fill-color": '#0f2a54',
+  						"fill-opacity":1.0,
+  						"fill-outline-color": 'rgba(255,255,255,0.5)',
+  					}
+  				},
+  				{
+  					"id": 'line_sheng',
+  					"type": "line",
+  					"source": 'poly_sheng_s5000',
+  					"source-layer": 'poly_sheng_s5000',
+  					'layout': {
+  						'line-join': 'round',
+  						'line-cap': 'round'
+  					},
+  					'paint': {
+  						"line-color": '#3cd7ef',
+  						"line-width": 1.5,
+  					},
+  				},
+  			],
+  		}
+    // 替换为你的 Mapbox 访问令牌  
+    mapboxgl.accessToken = 'pk.eyJ1IjoiZXhhbXBsZXMiLCJhIjoiY2p1dHRybDR5MGJuZjQzcGhrZ2doeGgwNyJ9.a-vxW4UaxOoUMWUTGnEArw';
+
+    // 初始化地图  
+    const map = new mapboxgl.Map({  
+      container: 'map', // 地图容器 ID  
+      style: style, // 地图样式  
+      center: [111.1551, 27.2741], // 地图中心点 (经度, 纬度)  
+      zoom: 8 // 缩放级别  
+    }); 
+	 
+	 // 获取鼠标位置并显示  
+	 const info = document.getElementById('info');  
+	 map.on('mousemove', (e) => {  
+	   const lng = e.lngLat.lng.toFixed(5); // 经度  
+	   const lat = e.lngLat.lat.toFixed(5); // 纬度  
+	   const x = e.point.x.toFixed(0); // 屏幕 X 坐标  
+	   const y = e.point.y.toFixed(0); // 屏幕 Y 坐标  
+ 
+	   // 更新显示信息  
+	   info.innerHTML = `鼠标位置：<br>经度: ${lng}, 纬度: ${lat}<br>屏幕坐标: X: ${x}, Y: ${y}`;  
+	 });  
+	 let marker;  
+	 map.on('contextmenu', (e) => {  
+	   const lng = e.lngLat.lng.toFixed(6);  
+	   const lat = e.lngLat.lat.toFixed(6);  
+	   
+	   // 清除旧标记  
+		if (marker) marker.remove();  
+
+		// 添加新标记  
+		marker = new mapboxgl.Marker()  
+		.setLngLat([lng, lat])  
+		.addTo(map);  
+	 
+	   navigator.clipboard.writeText(`${lng}, ${lat}`).then(() => {  
+	     alert('坐标已复制到剪贴板');  
+	   });  
+	   
+	 });  
+
+    // 定义多边形的经纬度坐标，必须逆时针，否则shader绘制出错 
+    const polygonCoordinates = [  
+        [110, 26], // 顶点 2  
+        [111, 26], // 顶点 3  
+        [111, 27],  // 顶点 4  
+		[110, 27] // 顶点 1 
+    ];  
+	
+	polygonCoordinates.forEach((coord,index) => {  
+	  const marker = new mapboxgl.Marker().setLngLat(coord).addTo(map); 
+	  const popup = new mapboxgl.Popup({ offset: 25 })  
+	      .setHTML(`<h3 style="width:50px">${index}</h3>`);  
+	  
+	    marker.setPopup(popup); 
+	}); 
+
+    // 自定义图层  
+	const customLayer = {  
+	  id: 'custom-layer',  
+	  type: 'custom',  
+	  renderingMode: '2d', // 使用 2D 渲染模式  
+
+	  // WebGL 相关变量  
+	  gl: null,  
+	  program: null,  
+	  positionBuffer: null,  
+	  texCoordBuffer: null,  
+	  texture: null,  
+	  width:256,
+	  height:256,
+	  hMax:0,
+	  hMin:0,
+	  xMax:0,
+	  xMin:0,
+	  yMax:0,
+	  yMin:0,
+
+	  // 初始化该图层时调用  
+	  onAdd: function (map, gl) {  
+		this.gl = gl;  
+
+		// 顶点着色器  
+		const vertexSource = `  
+		attribute vec2 a_position;  
+		attribute vec2 a_texCoord;
+		uniform mat4 u_matrix;
+		varying vec2 v_texCoord;  
+		void main() {  
+		  gl_Position = u_matrix * vec4(a_position, 0.0, 1.0);  
+		  v_texCoord = a_texCoord;  
+		}  
+		`;  
+
+		// 片段着色器  
+		const fragmentSource = `  
+		precision mediump float;  
+		varying vec2 v_texCoord;  
+		uniform sampler2D u_texture;
+		
+		uniform vec2 u_resolution;
+		uniform vec2 u_mouse;
+		uniform sampler2D u_buffer1;
+		uniform float u_time;
+		uniform float xMax;
+		uniform float xMin;
+		uniform float yMax;
+		uniform float yMin;
+		uniform float hMax;
+		uniform float hMin;
+				
+		
+		//////////////////////////////////////////////////  
+		// 保留必要函数：噪声、water、river、seagrad 等 //  
+		//////////////////////////////////////////////////  
+		
+		// 光照方向  
+		const vec3 ld = normalize(vec3(0.046,0.188,0.810));  
+		
+		float hash(vec2 p) {  
+		    float h = dot(p, vec2(127.1, 311.7));  
+		    return fract(sin(h) * 43758.5453123 - mod(u_time, 8.0)*0.001);  
+		}  
+		
+		float noise(vec2 p) {  
+		    vec2 i = floor(p);  
+		    vec2 f = fract(p);  
+		    vec2 u = f * f * (3.0 - 2.0 * f);  
+		    return -1.0 + 2.0 * mix(  
+		        mix(hash(i + vec2(0.0, 0.0)), hash(i + vec2(1.0, 0.0)), u.x),  
+		        mix(hash(i + vec2(0.0,1.0)), hash(i + vec2(1.0, 1.0)), u.x),  
+		        u.y  
+		    );  
+		}  
+		
+		// 基础水波图，叠加简单噪声  
+		float water(vec2 uv) {  
+		    uv += noise(uv * 0.8);  
+		    vec2 wv = 1.0 - abs(sin(uv));  
+		    return (wv.x + wv.y) * 0.5;  
+		}  
+		
+		// 分层叠加 water  
+		float river(vec2 uv) {  
+		    float s = 0.0;  
+		    const float levels = 4.0;  
+		    mat2 r = mat2(  
+		         0.4, -0.24,  
+		         0.4,  0.27  
+		    );  
+		    for (float i = 1.0; i <= levels; i++) {  
+		        uv *= r;  
+		        s += water(uv * i * 2.0);  
+		    }  
+		    s /= (levels + 1.0);  
+		    return s;  
+		}  
+		
+		// 计算水面的法线扰动  
+		vec3 seagrad(in vec2 uv, float bump, float t)  
+		{  
+		    uv *= 20.;  
+		    float hc = river(uv);  
+		    vec2 off = vec2(3.0 / (t), 0.);  
+		    float hh = river(uv + off);  
+		    float hv = river(uv + off.yx);  
+		    
+		    vec3 h = normalize(vec3(bump, hh - hc, 0.0));   
+		    vec3 v = normalize(vec3(0.0, hv - hc, bump));  
+		    // cross 得到法线，再取负号保证朝向一致  
+		    return -normalize(cross(h, v));  
+		}  
+		
+		// 返回 0~1~0 的一个往返插值，用作模拟流动周期  
+		float getMixValue(float cycle, out float offset1, out float offset2)  
+		{  
+		    // cycle 在 0~1 间，映射到 0~1~0  
+		    float mixval = cycle * 2.0;  
+		    if (mixval > 1.0) mixval = 2.0 - mixval;  
+		    
+		    offset1 = cycle;  
+		    // 第二份纹理相位偏移 0.5  
+		    offset2 = mod(offset1 + 0.5, 1.0);  
+		    return mixval;  
+		}
+		
+		// 高斯模糊函数  
+		vec4 gaussianBlur(sampler2D image, vec2 uv, vec2 resolution, vec2 direction, float radius) {  
+		    // 高斯权重（固定值，可根据需要扩展）  
+		    float weights[5];  
+		    weights[0] = 0.227027;   // 中心权重  
+		    weights[1] = 0.1945946;  // 第1层偏移权重  
+		    weights[2] = 0.1216216;  // 第2层偏移权重  
+		    weights[3] = 0.054054;   // 第3层偏移权重  
+		    weights[4] = 0.016216;   // 第4层偏移权重  
+		    
+		    vec2 texOffset = direction / resolution; // 纹理偏移量，用于确定相邻像素位置  
+		    vec4 color = texture2D(image, uv) * weights[0]; // 以中心像素为基准计算  
+		
+		    // 对相邻像素采样并加权  
+		    for (int i = 1; i <= 4; i++) { // 循环 4 次，根据权重采样  
+		        vec2 offset = float(i) * texOffset * radius;  
+		        color += texture2D(image, uv + offset) * weights[i];  
+		        color += texture2D(image, uv - offset) * weights[i];  
+		    }  
+		
+		    return color; // 返回模糊后的颜色  
+		}
+		
+		vec4 lookup_wind(const vec2 uv) {
+		    vec2 px = 1.0 / u_resolution;
+		    vec2 vc = (floor(uv * u_resolution)) * px;
+		    vec2 f = fract(uv * u_resolution);
+		    vec4 tl = texture2D(u_texture, vc);
+		    vec4 tr = texture2D(u_texture, vc + vec2(px.x, 0));
+		    vec4 bl = texture2D(u_texture, vc + vec2(0, px.y));
+		    vec4 br = texture2D(u_texture, vc + px);
+		    return mix(mix(tl, tr, f.x), mix(bl, br, f.x), f.y);
+		}
+		
+		void main() {
+		    vec2 uv = v_texCoord;
+		    // vec2 uv = gl_FragCoord.xy/u_resolution.xy;
+			
+			gl_FragColor = vec4(0.0);
+		
+			 // 时间周期 T，用于控制水流动周期  
+			// --- 1. 让河面扰动更明显 ---  
+			vec2 largeScale = vec2(60.3);   // 更大尺度的波  
+			float largeBump = 0.286;             // 提高 bump  
+			float T = 1.624;                      // 周期  
+			float cycle = mod(u_time, T) / T;  
+			float o1, o2;  
+			float mv = getMixValue(cycle, o1, o2);  
+			
+			// 模拟水流的流向
+			// 调用高斯模糊函数  
+			 // vec4 vh = gaussianBlur(u_texture, uv, u_resolution, vec2(0.01), 5.0);  
+			 //vec4 vh = lookup_wind(uv);
+			vec4 vh = texture2D(u_texture, v_texCoord);
+			// vh.r = vh.r*(hMax-hMin)+hMin;
+			// vh.g = vh.g*(xMax-xMin)+xMin;
+			// vh.b = vh.b*(yMax-yMin)+yMin;
+			// vec2 flow = -vh.gb;
+			
+			vec2 flow = -mix(vec2(xMin,yMin),vec2(xMax,yMax),vh.gb);
+			flow.y = -flow.y;
+			
+			// float tt = flow.x;
+			// flow.x = flow.y;
+			// flow.y = tt;
+			
+			float speed = 1.0;  
+		
+			float t = 2.852;      // 用于偏移计算  
+			// 计算更大频率的法线  
+			// 注意这里将 scale 改为 largeScale  
+			vec3 g1 = seagrad(largeScale * uv + flow * o1*speed, largeBump, t);  
+			vec3 g2 = seagrad(largeScale * uv + flow * o2*speed, largeBump, t);  
+			vec3 g3 = seagrad(largeScale * uv + vec2(0.1,0.2) + flow * o1 * speed * 1.0, largeBump, t);  
+			vec3 g4 = seagrad(largeScale * uv + vec2(0.3, 0.2) + flow * o2 * speed * 1.0, largeBump, t); 
+		
+			vec3 gm = mix(g2, g1, mv);  
+			gm += mix(g4, g3, mv); 
+			gm = normalize(gm);  
+		
+			// --- 2. 漫反射与高光 ---  
+			// 漫反射  
+			float wrp = 0.500;  
+			float wd = max(dot(gm, ld), 0.5);  
+			wd = (wd + wrp) / (1.0 + wrp);  
+			vec4 waterColorBase = vec4(0.695,0.374,0.204,1.000);  
+		
+			//waterColorBase = vec4(0.016,0.635,0.358,1.000);
+			vec4 diffuse = waterColorBase * wd * 0.6;  
+		
+			// 简单镜面高光  
+			vec3 viewDir = vec3(0.0, 0.0, -1.0); // 俯视  
+			vec3 halfVec = normalize(-viewDir + ld);  
+			float specFactor = max(dot(halfVec, gm), 0.0);  
+			// 适当提高强度  
+			float spec = pow(specFactor, 80.0) * 2.0;   
+		
+			// --- 3. 模拟环境或天空反射 ---  
+			vec3 rDir = reflect(-viewDir, gm);  
+			float skyVal = clamp(rDir.y * 0.788 + 0.612, 0.0, 1.0);  
+			// 从深蓝到浅蓝再到白  
+			vec3 skyBottom = vec3(0.991,0.991,0.991);  
+			vec3 skyTop = vec3(1.000,1.000,1.000);  
+			vec3 skyCol = mix(skyBottom, skyTop, skyVal);  
+			// 可以根据 Fresnel 叠加反射  
+			float fres = pow(1.0 - max(dot(-viewDir, gm), 0.), 2.0);  
+			vec4 reflectColor = vec4(skyCol * fres, 1.0) * 0.4;  
+		
+			// 组合  
+			gl_FragColor = diffuse + reflectColor + vec4(spec);  
+			gl_FragColor.a = 1.0;
+			
+			if(vh.r<0.01){
+				gl_FragColor =vec4(0.0);
+			}
+		}
+		`;  
+
+		// 编译 WebGL Shader  
+		const vertexShader = this._createShader(gl, gl.VERTEX_SHADER, vertexSource);  
+		const fragmentShader = this._createShader(gl, gl.FRAGMENT_SHADER, fragmentSource);  
+
+		// 创建 WebGL 程序  
+		this.program = gl.createProgram();  
+		gl.attachShader(this.program, vertexShader);  
+		gl.attachShader(this.program, fragmentShader);  
+		gl.linkProgram(this.program);  
+
+		if (!gl.getProgramParameter(this.program, gl.LINK_STATUS)) {  
+		  console.error('Unable to initialize the shader program:', gl.getProgramInfoLog(this.program));  
+		}  
+
+		// 创建顶点缓冲区  
+		this.positionBuffer = gl.createBuffer();  
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
+
+		// 定义矩形顶点（包含位置和纹理坐标）  
+		const vertices = [];
+		polygonCoordinates.forEach(coord => {  
+		  const point = mapboxgl.MercatorCoordinate.fromLngLat(coord);  
+		  vertices.push(point.x, point.y);  
+		});
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);  
+
+		// 创建纹理坐标缓冲区  
+		this.texCoordBuffer = gl.createBuffer();  
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.texCoordBuffer);  
+
+		// 为每个顶点定义纹理坐标  
+		const texCoords = [  
+		  0.0, 1.0, // 左下角  
+		  1.0, 1.0, // 右下角  
+		  1.0, 0.0, // 左上角  
+		  0.0, 0.0, // 右上角  
+		];  
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(texCoords), gl.STATIC_DRAW);  
+
+		// 创建并加载纹理  
+		this.texture = gl.createTexture();  
+		gl.bindTexture(gl.TEXTURE_2D, this.texture);  
+
+		// 创建简单颜色纹理（或实际加载图片纹理）
+		fetch("getresult.png").then(response => response.blob()).then(blob => {
+			const headBlob = blob.slice(0, 32);
+			const reader = new FileReader();
+			reader.readAsArrayBuffer(headBlob);
+			reader.onloadend = ()=> {  
+			  const arrayBuffer = reader.result;  
+			  const byteArray = new Int32Array(arrayBuffer);  
+			
+			  this.width =  byteArray[1];
+			  this.height =  byteArray[0];
+			  this.hMax = byteArray[2]/100;
+			  this.hMin = byteArray[3]/100;
+			  this.xMax = byteArray[4]/100;
+			  this.xMin = byteArray[5]/100;
+			  this.yMax = byteArray[6]/100;
+			  this.yMin = byteArray[7]/100;
+			  
+			  // 截取剩余部分
+			  const remainingBlob = blob.slice(32);  
+			  const image = new Image();
+			  // 转换 Blob 到图片 URL
+			  image.src = URL.createObjectURL(remainingBlob); 
+			  image.onload = () => {  
+			    gl.bindTexture(gl.TEXTURE_2D, this.texture);  
+			    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);  
+			  
+			    // 配置纹理参数  
+			    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);  
+			    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);  
+				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);  
+			    //gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+				//gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+			  };  
+			  
+			};
+		})
+		
+	  },  
+
+	  // 渲染时调用  
+	  render: function (gl, matrix) {  
+		gl.useProgram(this.program);  
+
+		// 绑定顶点位置缓冲区  
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);  
+		const a_position = gl.getAttribLocation(this.program, 'a_position');  
+		gl.enableVertexAttribArray(a_position);  
+		gl.vertexAttribPointer(a_position, 2, gl.FLOAT, false, 0, 0);  
+		
+		const u_matrix = gl.getUniformLocation(this.program, 'u_matrix');
+		gl.uniformMatrix4fv(u_matrix, false, matrix);  
+		
+		const u_time = gl.getUniformLocation(this.program, 'u_time');
+		gl.uniform1f(u_time, performance.now()/1000); // 动态时间
+		
+		const hMax = gl.getUniformLocation(this.program, 'hMax');
+		gl.uniform1f(hMax, this.hMax);
+		const hMin = gl.getUniformLocation(this.program, 'hMin');
+		gl.uniform1f(hMin, this.hMin);
+		const xMax = gl.getUniformLocation(this.program, 'xMax');
+		gl.uniform1f(xMax, this.xMax);
+		const xMin = gl.getUniformLocation(this.program, 'xMin');
+		gl.uniform1f(xMin, this.xMin);
+		const yMax = gl.getUniformLocation(this.program, 'yMax');
+		gl.uniform1f(yMax, this.yMax);
+		const yMin = gl.getUniformLocation(this.program, 'yMin');
+		gl.uniform1f(yMin, this.yMin);
+		
+		// 获取 uniform 变量位置  
+		const u_resolution = gl.getUniformLocation(this.program, 'u_resolution');  
+		// 设置 uniform 的值 (为 vec2 变量传递值)  
+		gl.uniform2fv(u_resolution, [256, 256]); // 偏移量 x: 0.2, y: 0.3  
+		
+		// 绑定纹理坐标缓冲区  
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.texCoordBuffer);  
+		const a_texCoord = gl.getAttribLocation(this.program, 'a_texCoord');  
+		gl.enableVertexAttribArray(a_texCoord);  
+		gl.vertexAttribPointer(a_texCoord, 2, gl.FLOAT, false, 0, 0);  
+
+		// 绑定纹理  
+		gl.activeTexture(gl.TEXTURE0);  
+		gl.bindTexture(gl.TEXTURE_2D, this.texture);  
+
+		// 传递纹理到 uniform  
+		const u_texture = gl.getUniformLocation(this.program, 'u_texture');  
+		gl.uniform1i(u_texture, 0);
+
+		// 绘制矩形（4 个顶点组成两个三角形）  
+		//gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+		gl.drawArrays(gl.TRIANGLE_FAN, 0, polygonCoordinates.length);
+
+		map.triggerRepaint();  
+	  },  
+
+	  // 工具函数：编译 Shader  
+	  _createShader: function (gl, type, source) {  
+		const shader = gl.createShader(type);  
+		gl.shaderSource(shader, source);  
+		gl.compileShader(shader);  
+
+		if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {  
+		  console.error('An error occurred compiling the shaders:', gl.getShaderInfoLog(shader));  
+		  gl.deleteShader(shader);  
+		  return null;  
+		}  
+
+		return shader;  
+	  },  
+	};
+	
+	//		map.triggerRepaint()
+	
+
+    // 添加自定义图层到地图  
+    map.on('load', () => {  
+      map.addLayer(customLayer);  
+    });  
+  </script>  
+</body>  
+</html>  

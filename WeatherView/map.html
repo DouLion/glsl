@@ -70,6 +70,8 @@
 
         const tiles = L.tileLayer(ArcGISHub.SateFireImage, {
             maxZoom: 18,
+            crossOrigin: true,
+  crossOriginCredentials: true
         }).addTo(map);
 
         LeafletLoadGeoJSON(map, "vector/china_province_1e-4.geojson", VECTOR_STYLE.SHENG_LINE)
@@ -114,6 +116,8 @@
         // RenderLable(glLable);
         //const uur = 'http://192.168.0.141:8086/radar_henan/api/data/render?type=REF&btm=2024-06-20%2008%3A00&etm=2024-06-20%2008%3A55&project=HENANPRO&station=HENAN1';
         //const uur = 'http://192.168.0.141:8086/radar_henan/api/data/render?type=REF&btm=2024-06-20%2008%3A00&etm=2024-06-20%2008%3A55&project=HENANPRO&station=';
+
+        
         const uur = 'http://192.168.0.141:8086/radar_henan/api/data/render?type=REF&btm=2024-06-20%2008%3A55&etm=2024-06-20%2008%3A55&project=HENANPRO&station=';
         fetch(uur) // 替换为实际的 API URL
     .then(response => response.json())
