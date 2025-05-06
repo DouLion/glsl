@@ -1,10 +1,10 @@
 const VECTOR_STYLE = {
     SHENG_LINE: {
-        color: "#AAAAAA",
-        weight: 4,
+        color: "#1E90FF",
+        weight: 2,
         fillColor: "#000000",
         fillOpacity: 0.0,
-        dashArray: [30, 12, 6, 12, 6, 12] // 虚线样式, 2
+        dashArray: [20, 10] 
     }, SHI_LINE: {
         color: "#0000FF",
         weight: 3,

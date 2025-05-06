@@ -169,7 +169,7 @@ const W_DEFAULT_COLOR_LABLES = {
     "APCP": {
         "thresholds": [
             0.0,
-            1,
+            3,
             10,
             25,
             50,
@@ -179,13 +179,13 @@ const W_DEFAULT_COLOR_LABLES = {
         ],
         "colors": [
             "00000000",
-            "ffa5f28f",
-            "ff3da700",
-            "ff61bbfd",
-            "ff0001fb",
-            "fffe00fe",
-            "ff82033b",
-            "ffff033b"
+            "cfa5f28f",
+            "cf3da700",
+            "cf61bbfd",
+            "cf0001fb",
+            "cffe00fe",
+            "cf82033b",
+            "cfff033b"
         ]
     },
     "APCP2":
@@ -201,51 +201,51 @@ const W_DEFAULT_COLOR_LABLES = {
         ],
         "colors": [
             "004352BF",
-            "ff4251BE",
-            "ff29B0E3",
-            "ff27DCA8",
-            "ffF09E28",
-            "ff8D1003",
-            "ff8A0B03"
+            "cf4251BE",
+            "cf29B0E3",
+            "cf27DCA8",
+            "cfF09E28",
+            "cf8D1003",
+            "cf8A0B03"
         ]
     },
     RH: {
         "thresholds": [0, 10, 20, 30, 40, 50, 60, 70, 80, 90],
         "colors": [
-            "ffef6917",
-            "fffb913e",
-            "fff8d475",
-            "fffbf0a6",
-            "ffdff7d7",
-            "ffd8f7e7",
-            "ff8ce1fe",
-            "ff6fb7e6",
-            "ff2b59dc",
-            "ff3226ce"
+            "cfef6917",
+            "cffb913e",
+            "cff8d475",
+            "cffbf0a6",
+            "cfdff7d7",
+            "cfd8f7e7",
+            "cf8ce1fe",
+            "cf6fb7e6",
+            "cf2b59dc",
+            "cf3226ce"
         ]
     },
     PRES: {
         "thresholds": [500, 600, 700, 800, 900, 950, 1000, 1010, 1025, 1040, 1060],
-        "colors": ["ff1464d2", "ff2882f0", "ff50a5f5", "ff96d2fa", "ffb4f0fa", "ffcbf8fd", "ffb4faaa", "ff78f573", "ff37d23c", "ff1eb41e", "ff0fa00f"]
+        "colors": ["cf1464d2", "cf2882f0", "cf50a5f5", "cf96d2fa", "cfb4f0fa", "cfcbf8fd", "cfb4faaa", "cf78f573", "cf37d23c", "cf1eb41e", "cf0fa00f"]
     },
     TMP: {
         "thresholds": [-12.0, -8.0, -4, 0, 4, 8, 12, 16, 20, 24, 28, 32, 35, 37, 50],
-        "colors": ["ff006699", "ff2f6ad2", "ff1c74cc", "ff8dccff", "ff9de0f5", "ffdefbff", "fff2ffe5", "ffccffcc", "ffc9ff98", "ffffffa0", "ffffe5ba", "ffffcc9c", "ffe39995", "ffff4200", "ffeb0000"]
+        "colors": ["cf006699", "cf2f6ad2", "cf1c74cc", "cf8dccff", "cf9de0f5", "cfdefbff", "cff2ffe5", "cfccffcc", "cfc9ff98", "cfffffa0", "cfffe5ba", "cfffcc9c", "cfe39995", "cfff4200", "cfeb0000"]
     },
     TMAX: {
         "thresholds": [-12.0, -8.0, -4, 0, 4, 8, 12, 16, 20, 24, 28, 32, 35, 37, 50],
-        "colors": ["ff006699", "ff2f6ad2", "ff1c74cc", "ff8dccff", "ff9de0f5", "ffdefbff", "fff2ffe5", "ffccffcc", "ffc9ff98", "ffffffa0", "ffffe5ba", "ffffcc9c", "ffe39995", "ffff4200", "ffeb0000"]
+        "colors": ["cf006699", "cf2f6ad2", "cf1c74cc", "cf8dccff", "cf9de0f5", "cfdefbff", "cff2ffe5", "cfccffcc", "cfc9ff98", "cfffffa0", "cfffe5ba", "cfffcc9c", "cfe39995", "cfff4200", "cfeb0000"]
     },
     TMIN: {
         "thresholds": [-12.0, -8.0, -4, 0, 4, 8, 12, 16, 20, 24, 28, 32, 35, 37, 50],
-        "colors": ["ff006699", "ff2f6ad2", "ff1c74cc", "ff8dccff", "ff9de0f5", "ffdefbff", "fff2ffe5", "ffccffcc", "ffc9ff98", "ffffffa0", "ffffe5ba", "ffffcc9c", "ffe39995", "ffff4200", "ffeb0000"]
+        "colors": ["cf006699", "cf2f6ad2", "cf1c74cc", "cf8dccff", "cf9de0f5", "cfdefbff", "cff2ffe5", "cfccffcc", "cfc9ff98", "cfffffa0", "cfffe5ba", "cfffcc9c", "cfe39995", "cfff4200", "cfeb0000"]
     },
     DSWRF: {
         "thresholds": [50, 100, 150, 200, 250, 300, 350, 400, 450, 500, 550],
-        "colors": ["ff1e50b3", "ff3a5bc7", "ff4c74d8", "ff62a7c6", "ff80d4e1", "ffa1e1f1", "ffffee93", "ffffdd55", "ffffcc67", "ffffbb78", "ffff6f31"]
+        "colors": ["cf1e50b3", "cf3a5bc7", "cf4c74d8", "cf62a7c6", "cf80d4e1", "cfa1e1f1", "cfffee93", "cfffdd55", "cfffcc67", "cfffbb78", "cfff6f31"]
     },
     ULWRF: {
         "thresholds": [50, 100, 150, 200, 250, 300, 350, 400, 450, 500, 550],
-        "colors": ["ff1e50b3", "ff3a5bc7", "ff4c74d8", "ff62a7c6", "ff80d4e1", "ffa1e1f1", "ffffee93", "ffffdd55", "ffffcc67", "ffffbb78", "ffff6f31"]
+        "colors": ["cf1e50b3", "cf3a5bc7", "cf4c74d8", "cf62a7c6", "cf80d4e1", "cfa1e1f1", "cfffee93", "cfffdd55", "cfffcc67", "cfffbb78", "cfff6f31"]
     }
 }

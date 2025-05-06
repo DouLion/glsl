@@ -9,7 +9,9 @@ function RenderNormal(gl, params) {
     const vertexShader = CreateShader(gl, gl.VERTEX_SHADER, WEATHER_VERTES_SHADER_SOURCE);
     const fragmentShader = CreateShader(gl, gl.FRAGMENT_SHADER, WEATHER_FRAGMENT_SHADER_SOURCE);
     const program = CreateProgram(gl, vertexShader, fragmentShader);
-    gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    gl.depthMask(false); // 禁用深度写入
+    gl.depthMask(true); // 重新启用深度写入
+    gl.clearColor(0.0, 0.0, 0.0, 0.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
 
     // 设置视口
@@ -73,8 +75,7 @@ function RenderNormal(gl, params) {
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 }
 
-function RenderLable(gl)
-{
+function RenderLable(gl) {
     const vertexShader = CreateShader(gl, gl.VERTEX_SHADER, LABEL_VERTES_SHADER_SOURCE);
     const fragmentShader = CreateShader(gl, gl.FRAGMENT_SHADER, LABEL_FRAGMENT_SHADER_SOURCE);
     const program = CreateProgram(gl, vertexShader, fragmentShader);
@@ -89,34 +90,34 @@ function RenderLable(gl)
     // 使用程序
     gl.useProgram(program);
 
-        // Set resolution uniform  
-        const resolutionLocation = gl.getUniformLocation(program, 'u_resolution');  
-    gl.uniform2f(resolutionLocation, gl.canvas.width, gl.canvas.height);  
+    // Set resolution uniform  
+    const resolutionLocation = gl.getUniformLocation(program, 'u_resolution');
+    gl.uniform2f(resolutionLocation, gl.canvas.width, gl.canvas.height);
 
     // Set the clear color  
-    gl.clearColor(0.0, 0.0, 0.0, 1.0);  
-    gl.clear(gl.COLOR_BUFFER_BIT);  
+    gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
 
     // Create a full-screen quad  
-    const vertices = new Float32Array([  
-        -1.0,  1.0,  
-        -1.0, -1.0,  
-         1.0, -1.0,  
-         1.0,  1.0,  
-    ]);  
+    const vertices = new Float32Array([
+        -1.0, 1.0,
+        -1.0, -1.0,
+        1.0, -1.0,
+        1.0, 1.0,
+    ]);
 
     // Create a buffer for the quad's vertices  
-    const vertexBuffer = gl.createBuffer();  
-    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);  
-    gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);  
+    const vertexBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
 
-    const position = gl.getAttribLocation(program, 'aVertexPosition');  
-    gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);  
-    gl.enableVertexAttribArray(position);  
-    
+    const position = gl.getAttribLocation(program, 'aVertexPosition');
+    gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(position);
 
-     // 将颜色传递给着色器 
-     const glLocColors = gl.getUniformLocation(program, 'wvColors');
+
+    // 将颜色传递给着色器 
+    const glLocColors = gl.getUniformLocation(program, 'wvColors');
     gl.uniform4fv(glLocColors, params.wRenderColors.flat());
 
     // 将颜色传递给着色器 
@@ -129,5 +130,5 @@ function RenderLable(gl)
 
 
     // Draw the circle  
-    gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);  
+    gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
 }

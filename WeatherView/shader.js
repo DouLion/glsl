@@ -34,7 +34,6 @@
     uniform vec4 wvColors[15];// 颜色数组
     uniform float wvThresholds[15];
     uniform int wvColorNum;// 颜色数量
-    attribute vec2 a_position;
         uniform vec2 coordOffset2[2];
 // 根据值对颜色进行线性插值
 float round(float x)
@@ -136,6 +135,11 @@ vec4 linearInterpolateColor(vec4 px){
         tmp2=wvColors[10];
         t=(value-wvThresholds[9])/(wvThresholds[10]-wvThresholds[9]);
     }
+    else if(index==11){
+        tmp1=wvColors[10];
+        tmp2=wvColors[10];
+        t=1.0;
+    }
     color=mix(tmp1,tmp2,t);
     return color;
 }
@@ -143,11 +147,11 @@ vec4 linearInterpolateColor(vec4 px){
 void main(){
 vec2 pos=v_texCoord;
     vec4 color=texture2D(u_image,v_texCoord);
-    if(pos.x <coordOffset2[0].x || pos.x > coordOffset2[1].x || pos.y < coordOffset2[0].y || pos.y > coordOffset2[1].y)
-    {
-        color=vec4(0.0,0.0,0.0,0.0);
-    }
-    else
+    // if(pos.x <coordOffset2[0].x || pos.x > coordOffset2[1].x || pos.y < coordOffset2[0].y || pos.y > coordOffset2[1].y)
+    // {
+    //     color=vec4(0.0,0.0,0.0,0.0);
+    // }
+    // else
     {
         color=linearInterpolateColor(color);
     }

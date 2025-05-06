@@ -43,7 +43,7 @@
             /* 确保 canvas 不会阻挡地图交互 */
             z-index: 1000;
             /* 确保 canvas 在地图之上 */
-            opacity: 0.5;
+            opacity: 0.7;
             visibility: hidden;
         }
     </style>
@@ -62,32 +62,37 @@
         <button id="locateCNButton">定位到中国</button>
     </div>
     <div id="map"></div>
-    <canvas id="weatherRenderCanvas"></canvas>
     <script>
 
-        const map = L.map('map').setView([34, 98], 6);
+        const map = L.map('map',{zoomSnap: 0.1 // 设置更小的缩放粒度
+        }).setView([38, 104.0], 5.2);
         let CURRENT_ZOOM = map.getZoom();
 
         const tiles = L.tileLayer(ArcGISHub.SateFireImage, {
             maxZoom: 18,
             crossOrigin: true,
-  crossOriginCredentials: true
+            crossOriginCredentials: true
         }).addTo(map);
 
         LeafletLoadGeoJSON(map, "vector/china_province_1e-4.geojson", VECTOR_STYLE.SHENG_LINE)
-        LeafletLoadGeoJSON(map, "vector/111.geojson",VECTOR_STYLE.RADAR_LINE)
 
-        const popup = L.popup();
+       
+
+        // 将 canvas 插入到地图容器中
+        // const mapContainer = map.getContainer();
+        // mapContainer.appendChild(cvsWeather);
+
+
+
+        const popup = L.popup({ autoPan: false });
         BindMapEvents(map)
-        const RenderShader = false;
+        const RenderShader = true;
         if (RenderShader) {
             map.on('moveend', function () {
-                let param = CreateRenderParam(this, TMP, NOAA);
-                LoadTexture(glWeather, param.url, RenderNormal, param);
+                RenderWeather();
             });
             map.on('zoomend', function () {
-                let param = CreateRenderParam(this, TMP, NOAA);
-                LoadTexture(glWeather, param.url, RenderNormal, param);
+                RenderWeather()
             });
         }
         else {
@@ -99,63 +104,106 @@
             });
         }
 
-
-        /// 下面开始加载矩阵数据并且渲染
-        const cvsWeather = document.getElementById('weatherRenderCanvas');
-
-        const glWeather = LoadGL(cvsWeather);
-        // 不同机器支持的顶点数组长度不一样, 有些机器不能显示
-        // ASSERT(wRenderColors.length <= glWeather.getParameter(glWeather.MAX_VERTEX_ATTRIBS), "该机器顶点数组长度最大支持：" + glWeather.getParameter(glWeather.MAX_VERTEX_ATTRIBS) + ", 当前顶点数组长度:" + wRenderColors.length)
+    // 创建一个 canvas 元素,用于绘制气象数据
+    const cvsWeather = document.createElement('canvas');
+                cvsWeather.width = 1920;
+                cvsWeather.height = 1080;
+        var weatherImgOverlay = null;
 
 
-        if (RenderShader) {
-            let param = CreateRenderParam(map, TMP, NOAA);
-            LoadTexture(glWeather, param.url, RenderNormal, param);
+        async function RenderWeather() {
+
+            try {
+             
+                let param = CreateRenderParam(map, TMP, NOAA);
+                // var glWeather = LoadGL(cvsWeather);
+                await LoadTexture(cvsWeather, param.url, RenderNormal, param);
+                // RenderNormal(glWeather, param);
+                const bounds = [
+                    [param.cvsBound.bottom, param.cvsBound.left],    // 左下角坐标
+                    [param.cvsBound.top, param.cvsBound.right] // 右上角坐标
+                ];
+                console.log("添加到地图");
+                if (weatherImgOverlay) {
+                    map.removeLayer(weatherImgOverlay); // 移除之前的图层
+                }
+                weatherImgOverlay = L.imageOverlay(cvsWeather.toDataURL('image/png'), bounds).addTo(map);
+                // 如果需要调整显示层级
+                //imageOverlay.bringToFront();
+            } catch (error) {
+                console.error(error);
+            }
+
+
+
         }
-
+        RenderWeather();
         // RenderLable(glLable);
         //const uur = 'http://192.168.0.141:8086/radar_henan/api/data/render?type=REF&btm=2024-06-20%2008%3A00&etm=2024-06-20%2008%3A55&project=HENANPRO&station=HENAN1';
         //const uur = 'http://192.168.0.141:8086/radar_henan/api/data/render?type=REF&btm=2024-06-20%2008%3A00&etm=2024-06-20%2008%3A55&project=HENANPRO&station=';
 
-        
-        const uur = 'http://192.168.0.141:8086/radar_henan/api/data/render?type=REF&btm=2024-06-20%2008%3A55&etm=2024-06-20%2008%3A55&project=HENANPRO&station=';
-        fetch(uur) // 替换为实际的 API URL
-    .then(response => response.json())
-    .then(data => {
-        if (data.status === 1) {
-            const { left, right, top, bottom, png } = data.data;
 
-            // 定义图片的边界范围
-            const bounds = [
-                [top, left],    // 左上角坐标
-                [bottom, right] // 右下角坐标
-            ];
+        // const uur = 'http://192.168.0.141:8086/radar_henan/api/data/render?type=REF&btm=2024-06-20%2008%3A55&etm=2024-06-20%2008%3A55&project=HENANPRO&station=';
+        // fetch(uur) // 替换为实际的 API URL
+        //     .then(response => response.json())
+        //     .then(data => {
+        //         if (data.status === 1) {
+        //             const { left, right, top, bottom, png } = data.data;
 
-            // 创建 Base64 图片的 URL
-            imageUrl = `data:image/png;base64,${png}`;
+        //             // 定义图片的边界范围
+        //             const bounds = [
+        //                 [top, left],    // 左上角坐标
+        //                 [bottom, right] // 右下角坐标
+        //             ];
 
-            // 将图片添加到地图上
-            //imageUrl= "img/test8.png";
-            L.imageOverlay(imageUrl, bounds).addTo(map);
+        //             // 创建 Base64 图片的 URL
+        //             imageUrl = `data:image/png;base64,${png}`;
 
-            // 可选：调整地图视图以适应图片范围
-            map.fitBounds(bounds);
-        } else {
-            console.error('Error fetching image:', data.message);
-        }
-    })
-    .catch(error => {
-        console.error('Failed to fetch data:', error);
-    });
+        //             // 将图片添加到地图上
+        //             //imageUrl= "img/test8.png";
+        //             L.imageOverlay(imageUrl, bounds).addTo(map);
+
+        //             // 可选：调整地图视图以适应图片范围
+        //             // map.fitBounds(bounds);
+        //         } else {
+        //             console.error('Error fetching image:', data.message);
+        //         }
+        //     })
+        //     .catch(error => {
+        //         console.error('Failed to fetch data:', error);
+        //     });
 
         function CreateRenderParam(map, selectType, selectProvider) {
+            const _b = map.getBounds();
+            const mb = {
+                left: _b.getSouthWest().lng,
+                right: _b.getNorthEast().lng,
+                top: _b.getNorthEast().lat,
+                bottom: _b.getSouthWest().lat
+            };
+            const gb = {
+                left: 74.0,
+                right: 135.0,
+                top: 54.0,
+                bottom: 18.0
+            };
             let param =
             {
+                // bounds: [
+                //     [
+                //         Math.max(mb.getSouthEast().lat, data_bound[0][0]),
+                //         Math.max(mb.getSouthEast().lng, data_bound[0][1])
+                //     ], // 西南角
+                //     [
+                //         Math.min(mb.getNorthWest().lat, data_bound[1][0]),
+                //         Math.min(mb.getNorthWest().lng, data_bound[1][1])
+                //     ] // 东北角 
+                // ],
                 cvsBound: {
-                    left: map.getBounds()._northEast.lng,
-                    right: map.getBounds()._southWest.lng,
-                    top: map.getBounds()._northEast.lat,
-                    bottom: map.getBounds()._southWest.lat
+                    left: Math.max(mb.left, gb.left),
+                    right: Math.min(mb.right, gb.right),
+                    top: Math.min(mb.top, gb.top),
+                    bottom: Math.max(mb.bottom, gb.bottom)
                 },
                 // 图像矩阵范围, NOAA,ECMWF, HENANQX都不一样
                 gridBound: {
@@ -164,12 +212,13 @@
                     top: 54.0,
                     bottom: 18.0
                 },
+
                 // 渲染用的参数
                 weather: {
                     type: selectType,
                     provider: selectProvider
                 },
-                url: "img/tmp.png",
+                url: "img/"+selectType+".png",
                 // 取对应类型的数据转换参数
                 wvMin: W_CONVERT_OPT[selectType].min,
                 wvMax: W_CONVERT_OPT[selectType].max,
@@ -178,7 +227,6 @@
                 wRenderColors: [],
                 wRenderThresholds: [],
             }
-
             // 根据给定数值进行对应的GLSL转换
 
             // 渲染颜色取默认设置,也可以自行定义
@@ -189,11 +237,11 @@
                 param.wRenderColors[i] = glsl_color;
                 param.wRenderThresholds[i] = glsl_threshold;
             }
-            console.log(param.cvsBound);
+            console.log(param.wRenderColors);
             return param;
         }
 
-      
+
         // function BindLocate(map, str)
 
         document.getElementById('latlon').addEventListener('click', function () {

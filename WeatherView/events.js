@@ -1,5 +1,5 @@
 function BindMapEvents(map, render_func) {
-
+    map.doubleClickZoom.disable();
     map.on('click', onMapClick);
     // map.on('moveend', render_func);
     // map.on('zoomend', render_func);
@@ -17,8 +17,8 @@ function details(e) {
 function onMapClick(e) {
     popup
         .setLatLng(e.latlng)
-        .setContent(details(e))
-        .openOn(map);
+        .setContent(details(e));
+        map.openPopup(popup);
 }
 
 

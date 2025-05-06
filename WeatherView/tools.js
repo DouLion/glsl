@@ -28,13 +28,45 @@ function ARGB_TO_GLSL_VEC4(hex)  //返回结果 RGBA
     ];
 }
 
+
+function Lonlat2Mercator(lon, lat) {
+    return [
+        lon / 180 * Math.PI * 6378137,
+        Math.log(Math.tan((90 + lat) * Math.PI / 360)) * 6378137
+    ]
+}
+
+function Mercator2Lonlat(x, y) {
+    return [
+        x / 20037508.34 * 180,
+        y / 20037508.34 * 180
+    ]
+}
+
+
+
 // 以数据网格范围为归一化单位, 获取屏幕坐标在网格范围内的归一化坐标
 function ScreebRelatePosInGrid(screen, grid) {
+
+    // 转墨卡托计算
+    var smct = {
+        left: Lonlat2Mercator(screen.left, screen.bottom)[0],
+        bottom: Lonlat2Mercator(screen.left, screen.bottom)[1],
+        right: Lonlat2Mercator(screen.right, screen.top)[0],
+        top: Lonlat2Mercator(screen.right, screen.top)[1]
+    };
+    var gmct = {
+        left: Lonlat2Mercator(grid.left, grid.bottom)[0],
+        bottom: Lonlat2Mercator(grid.left, grid.bottom)[1],
+        right: Lonlat2Mercator(grid.right, grid.top)[0],
+        top: Lonlat2Mercator(grid.right, grid.top)[1]
+    };
+
     var off = {
-        left: (screen.left - grid.left) / (grid.right - grid.left),
-        bottom: (screen.bottom - grid.bottom) / (grid.top - grid.bottom),
-        right: (screen.right - grid.left) / (grid.right - grid.left),
-        top: (screen.top - grid.bottom) / (grid.top - grid.bottom)
+        left: (smct.left - gmct.left) / (gmct.right - gmct.left),
+        bottom: (smct.bottom - gmct.bottom) / (gmct.top - gmct.bottom),
+        right: (smct.right - gmct.left) / (gmct.right - gmct.left),
+        top: (smct.top - gmct.bottom) / (gmct.top - gmct.bottom)
     }
     return [[off.left, off.top], [off.right, off.bottom]];
 }
@@ -42,10 +74,10 @@ function ScreebRelatePosInGrid(screen, grid) {
 // 以屏幕范围为归一化单位, 获取网格坐标在屏幕范围内的归一化坐标
 function GridRelatePosInScreen(screen, grid) {
     var off = {
-       left : (grid.left - screen.left) / (screen.right - screen.left),
-       bottom : (grid.bottom - screen.bottom) / (screen.top - screen.bottom),
-       right : (grid.right - screen.left) / (screen.right - screen.left),
-       top : (grid.top - screen.bottom) / (screen.top - screen.bottom)
+        left: (grid.left - screen.left) / (screen.right - screen.left),
+        bottom: (grid.bottom - screen.bottom) / (screen.top - screen.bottom),
+        right: (grid.right - screen.left) / (screen.right - screen.left),
+        top: (grid.top - screen.bottom) / (screen.top - screen.bottom)
 
     }
     return [[off.left, off.top], [off.right, off.bottom]];
@@ -65,9 +97,8 @@ async function LoadShaderFile(url) {
 
 ///
 /// --- webgl ----
-function LoadGL(canvas)
-{
-    const gl = canvas.getContext('webgl');
+function LoadGL(canvas) {
+    var gl = canvas.getContext('webgl');
 
     if (!gl) {
         alert('WebGL not supported, falling back on experimental-webgl');
@@ -109,26 +140,45 @@ function CreateProgram(gl, vertexShader, fragmentShader) {
 }
 
 // 加载图像并创建纹理
-function LoadTexture(gl, url, func, args) {
-    const texture = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, texture);
+function LoadTexture(_canvas, url, func, args) {
+    return new Promise((resolve, reject) => {
+        // var _ctx = _canvas.getContext('2d');
+        // _ctx.clearRect(0, 0, _canvas.width, _canvas.height);
+        // 加载图像
+        const image = new Image();
+        image.src = url;
+        console.log(url)
+        image.onload = function () {
+            const gl = _canvas.getContext('webgl') || _canvas.getContext('experimental-webgl');
+            if (!gl) {
+                reject('无法初始化WebGL上下文');
+                return;
+            }
+            gl.enable(gl.BLEND);
+            gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+            gl.clearColor(0.0, 0.0, 0.0, 0.0);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+            const texture = gl.createTexture();
+            gl.bindTexture(gl.TEXTURE_2D, texture);
 
-    // 设置纹理参数
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-    // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-    // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+            // 设置纹理参数
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+            // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+            // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+            gl.bindTexture(gl.TEXTURE_2D, texture);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+            func(gl, args);
+            console.log(_canvas.style.opacity)
+            resolve(_canvas);
+        };
+        image.onerror = function () {
+            reject('图像加载失败');
+        };
 
-    // 加载图像
-    const image = new Image();
-    image.onload = function () {
-        gl.bindTexture(gl.TEXTURE_2D, texture);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
-        func(gl, args);
-    };
-    image.src = url;
+    });
 }
 // 计算几何中心点（质心）的辅助函数
 function getCentroid(geometry) {
@@ -278,52 +328,63 @@ function LeafletLoadGeoJSON(map, url, _style) {
     fetch(url)
         .then(response => response.json())
         .then(data => {
+            var _style1 = _style;
+            _style1.weight = _style.weight * 1.5;
+            _style1.color = "#FFFFFF";
             L.geoJSON(data, {
-                onEachFeature: function(feature, layer) {
-                    // 添加省份名称标注
-                    if (feature.properties.NAME) {
-                        const centroid = getCentroid(feature.geometry);
-                        L.marker(centroid, {
-                            icon: L.divIcon({
-                                className: 'province-label',
-                                html: `<div style="position: relative; 
-                                        transform: translate(-50%, -50%);
-                                        font-size: 16px; 
-                                        color: #AAA;
-                                        text-shadow: 1px 1px 2px white;">${feature.properties.NAME}</div>`,
-                                iconSize: [100, 20]
-                            })
-                        }).addTo(map);
-                    }
-            
-                    // 点击事件处理
-                    layer.on({
-                        click: function(e) {
-                            // 移除之前的高亮效果
-                            if(window.highlightedProvince) {
-                                window.highlightedProvince.setStyle(_style);
-                            }
-            
-                            // 设置高亮样式
-                            layer.setStyle({
-                                color: '#ff0000',
-                                weight: 3
-                            });
-            
-                            // 保存当前高亮省份
-                            window.highlightedProvince = layer;
-            
-                            // 移动视图到省份范围
-                            const bounds = layer.getBounds();
-                            map.fitBounds(bounds);
-            
-                            // 显示省份信息
-                            layer.bindPopup(feature.properties.NAME).openPopup();
-                        }
-                    });
-                },
+                style: _style1
+            }).addTo(map);
+
+            L.geoJSON(data, {
                 style: _style
             }).addTo(map);
+            // L.geoJSON(data, {
+            //     onEachFeature: function (feature, layer) {
+            //         // 添加省份名称标注
+            //         // if (feature.properties.NAME) {
+            //         // const centroid = getCentroid(feature.geometry);
+            //         // L.marker(centroid, {
+            //         //     icon: L.divIcon({
+            //         //         className: 'province-label',
+            //         //         html: `<div style="position: absolute; 
+            //         //                 transform: translate(-50%, -100%);
+            //         //                 font-size: 16px; 
+            //         //                 color: #AAA;
+            //         //                 text-shadow: 1px 1px 2px rgba(255,255,255,0.8);
+            //         //                 white-space: nowrap;">${feature.properties.NAME}</div>`,
+            //         //         iconSize: [0, 0] // 使用 divIcon 时不需要指定iconSize
+            //         //     })
+            //         // }).addTo(map);}
+
+            //         // 点击事件处理
+            //         // layer.on({
+            //         //     click: function (e) {
+            //         //         // 移除之前的高亮效果
+            //         //         if (window.highlightedProvince) {
+            //         //             window.highlightedProvince.setStyle(_style);
+            //         //         }
+
+            //         //         // 设置高亮样式
+            //         //         layer.setStyle({
+            //         //             color: '#ff0000',
+            //         //             weight: 3
+            //         //         });
+
+            //         //         // 保存当前高亮省份
+            //         //         window.highlightedProvince = layer;
+
+            //         //         // 移动视图到省份范围
+            //         //         const bounds = layer.getBounds();
+            //         //         map.fitBounds(bounds);
+
+            //         //         // 显示省份信息
+            //         //         layer.bindPopup(feature.properties.NAME).openPopup();
+            //         //     }
+            //         // });
+            //     },
+            //     style: _style
+            // }).addTo(map);
         })
         .catch(error => console.error('Error loading GeoJSON:', error));
 }
+
