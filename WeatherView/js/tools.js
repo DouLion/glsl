@@ -146,6 +146,7 @@ function LoadTexture(_canvas, url, func, args) {
         // _ctx.clearRect(0, 0, _canvas.width, _canvas.height);
         // 加载图像
         const image = new Image();
+        image.crossOrigin = "Anonymous"; // 启用 CORS 请求
         image.src = url;
         console.log(url)
         image.onload = function () {

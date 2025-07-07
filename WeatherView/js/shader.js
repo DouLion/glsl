@@ -42,7 +42,7 @@ float round(float x)
 }
 vec4 linearInterpolateColor(vec4 px){
     // float value = round(px.r *25500.0)  + round(px.g*255.0) + round(px.b*2.55) + px.a * 0.0255;
-    float value = px.r *25500.0  + px.g*255.0 +px.b*2.55+ px.a * 0.0255;
+    float value = px.r *25500.0  + px.g*255.0 +px.b*2.55+ px.a * 0.0255 -12799.9999 ;
     float t=0.;
     vec4 color=vec4(0.);
     vec4 tmp1=vec4(0.);
