@@ -46,6 +46,29 @@
             opacity: 0.7;
             visibility: hidden;
         }
+
+        .weather-info-box {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: rgba(255, 255, 255, 0.9);
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            /* 确保悬浮框在地图控件之上 */
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            pointer-events: none;
+            /* 避免阻挡地图操作 */
+        }
+
+        .weather-info-content div {
+            margin: 5px 0;
+            white-space: nowrap;
+            /* 防止换行 */
+        }
     </style>
 </head>
 
@@ -74,10 +97,10 @@
         </select>
         <label for="intvSelect">时间步长:</label>
         <select id="intvSelect">
-            <option value=3>逐3小时</option>
-            <option value=6>逐6小时</option>
-            <option value=12>逐12小时</option>
             <option value=24>逐24小时</option>
+            <option value=12>逐12小时</option>
+            <option value=6>逐6小时</option>
+            <option value=3>逐3小时</option>
         </select>
         <button id="prevFrame">上一帧</button>
         <label>时间:</label>
@@ -89,9 +112,10 @@
     </div>
     <div id="map"></div>
     <script>
+        const globalServer = "http://192.168.0.80:9996";
         let globalPublishTM = "";
         let globalSource = "NOAA";
-        let globalINTV = 3;
+        let globalINTV = 24;
         let globalBTM = "";            // 开始时间
         let globalETM = "";            // 结束时间
         let globalType = "APCP";       // 数据类型
@@ -108,7 +132,7 @@
             globalType = dataTypeSelect.value;
 
             // 请求远程数据并填充发布来源
-            fetch("http://192.168.0.179:18080/forecast/api/data/publish/time/latest")
+            fetch(globalServer + "/forecast/api/data/publish/time/latest")
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 1 && data.data) {
@@ -129,6 +153,7 @@
                         console.log("初始 数据源:", globalSource, " PublishTM:", globalPublishTM);
                         updateGlobalPublishTM();
                         RenderWeather();
+                        updateWeatherInfoBox();
                     } else {
                         publishSelect.innerHTML = "<option>获取数据失败</option>";
                     }
@@ -143,19 +168,39 @@
                 updateGlobalPublishTM();
                 resetTimeRange(); // 重置时间范围
                 RenderWeather(); // 刷新天气渲染
+                updateWeatherInfoBox();
             });
 
             // 监听数据类型变化
             dataTypeSelect.addEventListener("change", function () {
                 globalType = this.value;
                 RenderWeather();
+                updateWeatherInfoBox();
             });
 
             intvSelect.addEventListener("change", function () {
                 globalINTV = parseInt(this.value);
                 resetTimeRange(); // 重置时间范围
                 RenderWeather(); // 刷新天气渲染
+                updateWeatherInfoBox();
             });
+
+            function updateWeatherInfoBox() {
+                document.getElementById('infoSource').textContent = globalSource;
+                document.getElementById('infoType').textContent = globalType;
+                document.getElementById('infoPublishTM').textContent = globalPublishTM || '-';
+                if (globalType == 'APCP') {
+                    document.getElementById('infoIntv').textContent = `(逐${globalINTV}小时)`;
+                    document.getElementById('infoTimeRange').textContent = `${globalBTM || '-'} 至 ${globalETM || '-'}`;
+                }
+                else {
+                    document.getElementById('infoIntv').textContent = '';
+                    document.getElementById('infoTimeRange').textContent = `${globalETM || '-'}`;
+                }
+
+
+
+            }
 
             // 更新 globalPublishTM 并设置初始 Btm/Etm
             function updateGlobalPublishTM() {
@@ -217,6 +262,7 @@
                 refreshTimeDisplay();
                 toggleButtonsState();
                 RenderWeather();
+                updateWeatherInfoBox();
             });
 
             // 下一帧
@@ -227,8 +273,9 @@
                 refreshTimeDisplay();
                 toggleButtonsState();
                 RenderWeather();
+                updateWeatherInfoBox();
             });
-            //RenderWeather();
+
         };
 
         const map = L.map('map', {
@@ -322,7 +369,7 @@
                 top: 54.0,
                 bottom: 18.0
             };
-            let formatURL = "http://192.168.0.179:18080/forecast/api/image/shader?";
+            let formatURL = globalServer + "/forecast/api/image/shader?";
             formatURL += "source=" + globalSource;
             formatURL += "&type=" + globalType;
             formatURL += "&ptm=" + globalPublishTM;
@@ -432,7 +479,14 @@
             });
         }
     </script>
-
+    <div id="weatherInfoBox" class="weather-info-box">
+        <div class="weather-info-content">
+            <div>发布源: <span id="infoSource"></span></div>
+            <div>数据类型: <span id="infoType">APCP</span> <span id="infoIntv"></span></div>
+            <div>发布时间: <span id="infoPublishTM">-</span></div>
+            <div>数据时间: <span id="infoTimeRange">-</span></div>
+        </div>
+    </div>
 
 </body>
 
