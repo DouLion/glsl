@@ -1,0 +1,328 @@
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>气象数据渲染测试</title>
+    <!-- 通过修改canvas的透明度 -->
+    <script src="js/marco.js"></script>
+    <script src="js/shader.js"></script>
+    <script src="js/tools.js"></script>
+    
+    <style>
+        .container {  
+            border: 3px solid black; /* 可选：添加边框以便更清楚地看到 canvas */
+        display: flex;
+        justify-content: center; /* 使内容水平居中 */
+        align-items: flex-end; /* 使内容垂直顶部对齐 */
+        width: 1920px;
+        height: 1080px;
+        }  
+        #cvs-weather {
+            border: 1px solid black; /* 可选：添加边框以便更清楚地看到 canvas */
+            background-color: #00000000;
+            display: block;
+            width: 97%;
+            height: 100%;
+        }
+
+        #cvs-label {
+            border: 1px solid black; /* 可选：添加边框以便更清楚地看到 canvas */
+            width: 3%;
+            height: 100%;
+        }
+
+    </style>
+</head>
+
+<body>
+    <!-- 这个地方需要指定一个较大的宽高,使webgl渲染比较精细的结果 -->
+    <div class="select">
+        <div class="radio-group" id="radioGroup"></div>  
+    </div>
+     <div class="container"> 
+        <!-- 绘制目标越大,图像越清晰 -->
+        <canvas id="cvs-label"  style="float: left;"><p>图例</p></canvas>
+        <canvas id="cvs-weather" width="1920" height="1080" style="float: right;"></canvas>
+
+     </div>
+    
+    <script>
+
+        // <!-- 一些数值定义 -->
+        // 绘制目标区域的canvas经纬度范围
+        // 这个值取视口经纬度范围和 图像矩阵范围的相交部分
+        // var canvasRange = {
+        //     left: 70,
+        //     right: 140,
+        //     top: 60,
+        //     bottom: 0
+        // }
+        var canvasRange = {
+            left: 74.0,
+            right: 135.0,
+            top: 54.0,
+            bottom: 18.0
+        }
+        // 图像矩阵范围, NOAA,ECMWF, HENANQX都不一样
+        var gridRange = {
+            left: 74.0,
+            right: 135.0,
+            top: 54.0,
+            bottom: 18.0
+        }
+
+    // 渲染用的参数
+        var render_cfg = {
+            weather: {
+                type: TMP,
+                provider: NOAA
+            },
+            
+            url: "img/tmp.png"
+        }
+       
+        // 取对应类型的数据转换参数
+        var wvMin = W_CONVERT_OPT[render_cfg.weather.type].min;
+        var wvMax = W_CONVERT_OPT[render_cfg.weather.type].max;
+        var wvScale = W_CONVERT_OPT[render_cfg.weather.type].scale;
+
+
+        // 设置颜色和数值  
+        var wRenderColors = [];
+        var wRenderThresholds = [];
+        // 根据给定数值进行对应的GLSL转换
+
+        // 渲染颜色取默认设置,也可以自行定义
+        var colorLables = W_DEFAULT_COLOR_LABLES;
+        for (var i = 0; i < colorLables[render_cfg.weather.type].thresholds.length; ++i) {
+            var glsl_color = ARGB_TO_GLSL_VEC4(colorLables[render_cfg.weather.type].colors[i]);
+            var glsl_threshold =colorLables[render_cfg.weather.type].thresholds[i] - wvMin;// ( - wvMin) * wvScale / 255.0;
+            wRenderColors[i] = glsl_color;
+            wRenderThresholds[i] = glsl_threshold;
+        }
+
+        /// 下面开始加载矩阵数据并且渲染
+        const cvsWeather = document.getElementById('cvs-weather');
+        const cvsLable = document.getElementById('cvs-label');
+        // const ctxWeatner = cvsWeather.getContext('2d');
+          
+           
+        const glWeather = LoadGL(cvsWeather);
+         // 不同机器支持的顶点数组长度不一样, 有些机器不能显示
+         ASSERT(wRenderColors.length <= glWeather.getParameter(glWeather.MAX_VERTEX_ATTRIBS), "该机器顶点数组长度最大支持：" + glWeather.getParameter(glWeather.MAX_VERTEX_ATTRIBS) + ", 当前顶点数组长度:" + wRenderColors.length)
+        const glLable = LoadGL(cvsLable)
+       
+
+        // 渲染函数,结合具体业务处理
+        function RenderNormal(gl, cfg) {
+            // let alpha = parseFloat(output.innerText)/100.0;
+            // ctxWeatner.globalAlpha = cfg.alpha;
+            //cvsWeather.innerHTML =`Opacity: ${alpha}%`;
+         
+            const vertexShader = CreateShader(gl, gl.VERTEX_SHADER, WEATHER_VERTES_SHADER_SOURCE);
+            const fragmentShader = CreateShader(gl, gl.FRAGMENT_SHADER, WEATHER_FRAGMENT_SHADER_SOURCE);
+            const program = CreateProgram(gl, vertexShader, fragmentShader);
+            gl.clearColor(0.0, 0.0, 0.0, 1.0);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+
+            // 设置视口
+            gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+
+            // 使用程序
+            gl.useProgram(program);
+
+            // 设置顶点数据
+            var verticesTexCoords = new Float32Array([
+        //顶点坐标   纹理坐标
+        //------\\ //----\\
+        -1, 1, 0.0, 1.0, //顶点1
+        -1, -1, 0.0, 0.0, //顶点2
+        1, 1, 1.0, 1.0, //顶点3
+        1, -1, 1.0, 0.0, //顶点4
+      ]);
+      var FSIZE = verticesTexCoords.BYTES_PER_ELEMENT;
+
+            const screenOffCoords = ScreebRelatePosInGrid(canvasRange, gridRange);
+            const gridOffCoords = GridRelatePosInScreen(canvasRange, gridRange);
+
+
+            const positionBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, verticesTexCoords, gl.STATIC_DRAW);
+
+            // 设置顶点属性
+            const glLocPosAttr = gl.getAttribLocation(program, 'a_position');
+            gl.vertexAttribPointer(glLocPosAttr, 2, gl.FLOAT, false, FSIZE * 4, 0);
+            gl.enableVertexAttribArray(glLocPosAttr);
+
+            // const texCoordBuffer = gl.createBuffer();
+            // gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
+            // gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(texCoords), gl.STATIC_DRAW);
+
+            const glLocTexCoordAttr = gl.getAttribLocation(program, 'a_texCoord');
+            gl.vertexAttribPointer(glLocTexCoordAttr, 2, gl.FLOAT, false, FSIZE * 4, FSIZE * 2);
+            gl.enableVertexAttribArray(glLocTexCoordAttr);
+            
+
+            // const textureSizeLocation = gl.getUniformLocation(program, 'u_textureSize');
+            // gl.uniform2f(textureSizeLocation, cfg.texture.width, cfg.texture.heigth);
+
+            // 坐标偏移计算参数传给顶点着色器
+            
+            const glLocOffset = gl.getUniformLocation(program, 'coordOffset');
+            gl.uniform2fv(glLocOffset, screenOffCoords.flat());
+
+            // 坐标偏移计算参数
+            const glLocOffset2 = gl.getUniformLocation(program, 'coordOffset2');
+            gl.uniform2fv(glLocOffset2, gridOffCoords.flat());
+            // 将颜色传递给着色器 
+            const glLocColors = gl.getUniformLocation(program, 'wvColors');
+            gl.uniform4fv(glLocColors, wRenderColors.flat());
+
+            // 将颜色传递给着色器 
+            const glLocThresholds = gl.getUniformLocation(program, 'wvThresholds');
+            gl.uniform1fv(glLocThresholds, wRenderThresholds);
+
+            // 设置有效颜色数量
+            const glLocColorNum = gl.getUniformLocation(program, 'wvColorNum');
+            gl.uniform1i(glLocColorNum, wRenderColors.length);
+
+            // 设置纹理单元
+            const glLocColorTexture = gl.getUniformLocation(program, 'u_image');
+            gl.uniform1i(glLocColorTexture, 0);
+
+            // 绘制
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+        }
+
+        // 渲染流场
+        function RenderWindFloow(cfg) {
+            // TODO: 
+        }
+        // 初始化
+
+        function RenderLable(gl)
+        {
+            const vertexShader = CreateShader(gl, gl.VERTEX_SHADER, LABEL_VERTES_SHADER_SOURCE);
+            const fragmentShader = CreateShader(gl, gl.FRAGMENT_SHADER, LABEL_FRAGMENT_SHADER_SOURCE);
+            const program = CreateProgram(gl, vertexShader, fragmentShader);
+            gl.clearColor(0.0, 0.0, 0.0, 1.0);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+
+
+
+            // 设置视口
+            gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+
+            // 使用程序
+            gl.useProgram(program);
+
+                // Set resolution uniform  
+                const resolutionLocation = gl.getUniformLocation(program, 'u_resolution');  
+            gl.uniform2f(resolutionLocation, gl.canvas.width, gl.canvas.height);  
+
+            // Set the clear color  
+            gl.clearColor(0.0, 0.0, 0.0, 1.0);  
+            gl.clear(gl.COLOR_BUFFER_BIT);  
+
+            // Create a full-screen quad  
+            const vertices = new Float32Array([  
+                -1.0,  1.0,  
+                -1.0, -1.0,  
+                 1.0, -1.0,  
+                 1.0,  1.0,  
+            ]);  
+
+            // Create a buffer for the quad's vertices  
+            const vertexBuffer = gl.createBuffer();  
+            gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);  
+            gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);  
+
+            const position = gl.getAttribLocation(program, 'aVertexPosition');  
+            gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);  
+            gl.enableVertexAttribArray(position);  
+            
+
+             // 将颜色传递给着色器 
+             const glLocColors = gl.getUniformLocation(program, 'wvColors');
+            gl.uniform4fv(glLocColors, wRenderColors.flat());
+
+            // 将颜色传递给着色器 
+            const glLocThresholds = gl.getUniformLocation(program, 'wvThresholds');
+            gl.uniform1fv(glLocThresholds, wRenderThresholds);
+
+            // 设置有效颜色数量
+            const glLocColorNum = gl.getUniformLocation(program, 'wvColorNum');
+            gl.uniform1i(glLocColorNum, wRenderColors.length);
+
+
+            // Draw the circle  
+            gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);  
+        }
+
+        function ResetOptions() {
+            wvMin = W_CONVERT_OPT[render_cfg.weather.type].min;
+            wvMax = W_CONVERT_OPT[render_cfg.weather.type].max;
+            wvScale = W_CONVERT_OPT[render_cfg.weather.type].scale;
+            wRenderColors = []
+            wRenderThresholds = []
+            for (var i = 0; i < colorLables[render_cfg.weather.type].thresholds.length; ++i) {
+            var glsl_color = ARGB_TO_GLSL_VEC4(colorLables[render_cfg.weather.type].colors[i]);
+            var glsl_threshold =colorLables[render_cfg.weather.type].thresholds[i] - wvMin;// ( - wvMin) * wvScale / 255.0;
+            wRenderColors[i] = glsl_color;
+            wRenderThresholds[i] = glsl_threshold;
+        }
+        }
+       
+
+        LoadTexture(glWeather, render_cfg.url, RenderNormal, render_cfg);
+        RenderLable(glLable);
+
+        // 获取 radioGroup div  
+        const radioGroup = document.getElementById('radioGroup');  
+
+        // 动态创建单选框  
+        W_TYPES.forEach((w_type, index) => {  
+            const label = document.createElement('label');  
+            label.className = 'radio-option';  
+
+            const input = document.createElement('input');  
+            input.type = 'radio';  
+            input.name = 'options';  
+            input.value = w_type; // 使用全局定义的变量作为 value  
+            // 添加事件监听器  
+            input.addEventListener('change', function() {  
+                render_cfg.weather.type = this.value; // 更新全局变量  
+                render_cfg.url = "img/"+this.value + ".png";
+                ResetOptions();
+                LoadTexture(glWeather, render_cfg.url, RenderNormal, render_cfg);
+            RenderLable(glLable);
+            });  
+
+            label.appendChild(input);  
+            label.appendChild(document.createTextNode(w_type));  
+            radioGroup.appendChild(label);  
+        });  
+
+        // const ctxWeather = cvsWeather.getContext('2d');
+        // function redraw() {
+        //     LoadTexture(glWeather, render_cfg.url, RenderNormal, render_cfg);
+        // }
+        // slider.oninput = function() {  
+        //     output.innerHTML = this.value;  
+        //      // 清除画布
+        //      redraw();
+        // }  
+
+      
+
+        // 监听滑块变化
+        //slider.addEventListener('input', draw);
+
+        // 初始化绘制
+        //draw();
+    </script>
+</body>
+
+</html>
